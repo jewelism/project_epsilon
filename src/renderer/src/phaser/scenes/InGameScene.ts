@@ -1,4 +1,5 @@
 import { Player } from '@/phaser/objects/Player';
+import { makeSafeArea } from '@/phaser/utils/helper';
 
 const GAME = {
   ZOOM: 2,
@@ -12,7 +13,7 @@ export class InGameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
-    const { map, playerSpawnPoints, obstacleSpawnPoints } = this.createMap(this);
+    const { map, playerSpawnPoints, SafeAreaPoints, obstacleSpawnPoints } = this.createMap(this);
 
     this.player = new Player(this, {
       x: playerSpawnPoints.x,
@@ -21,6 +22,9 @@ export class InGameScene extends Phaser.Scene {
       spriteKey: 'pixel_animals',
       frameNo: 0,
     });
+    console.log('SafeAreaPoints', SafeAreaPoints);
+    const asdf = makeSafeArea(this, SafeAreaPoints);
+
     this.createObstacle(obstacleSpawnPoints);
 
     this.cameras.main
@@ -38,18 +42,19 @@ export class InGameScene extends Phaser.Scene {
     });
     const bgTiles = map.addTilesetImage('16tiles', '16tiles');
     const bgLayer = map.createLayer('bg', bgTiles);
-    map.createLayer('bg_collision', bgTiles).setCollisionByExclusion([-1]);
 
-    map.createLayer('MonsterSpawn', bgTiles);
     const playerSpawnPoints = map.findObject('PlayerSpawn', ({ name }) => {
       return name.includes('PlayerSpawn');
+    });
+    const SafeAreaPoints = map.filterObjects('SafeArea', ({ name }) => {
+      return name.includes('SafeArea');
     });
     const obstacleSpawnPoints = map.filterObjects('ObstacleSpawn', ({ name }) => {
       return name.includes('ObstacleSpawn');
     });
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-    return { map, playerSpawnPoints, obstacleSpawnPoints };
+    return { map, playerSpawnPoints, SafeAreaPoints, obstacleSpawnPoints };
   }
   createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
     // obstacleSpawnPoints.forEach(({ x, y }) => {});

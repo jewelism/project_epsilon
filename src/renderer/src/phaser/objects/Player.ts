@@ -1,5 +1,4 @@
 import { Animal } from '@/phaser/objects/Animal';
-import { InGameScene } from '@/phaser/scenes/InGameScene';
 import { signal } from '@preact/signals-core';
 
 export class Player {
@@ -16,35 +15,34 @@ export class Player {
 
     scene.input.on('pointerdown', (pointer) => {
       this.targetToMove = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
-      console.log('pointer', pointer.x, pointer.y);
       scene.physics.moveToObject(this.body, this.targetToMove, this.body.moveSpeed);
       this.body.flipSpriteByDirection();
+      this.body.sprite.anims.play(`${spriteKey}_move${frameNo}`, true);
     });
   }
   preUpdate() {
-    if (
-      this.targetToMove &&
-      Phaser.Math.Distance.Between(
-        this.body.x,
-        this.body.y,
-        this.targetToMove.x,
-        this.targetToMove.y,
-      ) < 1
-    ) {
-      (this.body.body as any).setVelocity(0, 0);
-      this.targetToMove = null;
-    }
+    this.stopWhenMouseTarget();
   }
-  playerVelocityMoveWithKeyboard() {
-    const { left, right, up, down } = (this.body.scene as InGameScene).cursors;
-    const speed = this.body.moveSpeed;
-    const xSpeed = left.isDown ? -speed : right.isDown ? speed : 0;
-    const ySpeed = up.isDown ? -speed : down.isDown ? speed : 0;
-    (this.body.body as any).setVelocity(xSpeed, ySpeed);
-    if (xSpeed === 0 && ySpeed === 0) {
+  stopWhenMouseTarget() {
+    if (this.disabled.value) {
       return;
     }
-    this.body.flipSpriteByDirection();
-    this.body.sprite.anims.play(`pixel_animals_move${this.body.frameNo}`, true);
+    if (!this.targetToMove) {
+      return;
+    }
+    if (
+      !(
+        Phaser.Math.Distance.Between(
+          this.body.x,
+          this.body.y,
+          this.targetToMove.x,
+          this.targetToMove.y,
+        ) < 1
+      )
+    ) {
+      return;
+    }
+    (this.body.body as any).setVelocity(0, 0);
+    this.targetToMove = null;
   }
 }
