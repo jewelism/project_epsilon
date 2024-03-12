@@ -18,6 +18,9 @@ export class Player {
     this.body.preUpdate = this.preUpdate.bind(this);
 
     scene.input.on('pointerdown', (pointer) => {
+      if (this.disabled.value) {
+        return;
+      }
       this.targetToMove = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
       scene.physics.moveToObject(this.body, this.targetToMove, this.body.moveSpeed.value);
       this.body.flipSpriteByDirection();
@@ -27,6 +30,7 @@ export class Player {
       if (!this.disabled.value) {
         return;
       }
+      this.stopMove();
       this.body.sprite.setTint(0xff0000);
       scene.tweens.add({
         targets: this.body,
@@ -40,9 +44,6 @@ export class Player {
     this.stopWhenMouseTarget();
   }
   stopWhenMouseTarget() {
-    if (this.disabled.value) {
-      return;
-    }
     if (!this.targetToMove) {
       return;
     }
@@ -58,7 +59,10 @@ export class Player {
     ) {
       return;
     }
-    (this.body.body as any).setVelocity(0, 0);
     this.targetToMove = null;
+    this.stopMove();
+  }
+  stopMove() {
+    (this.body.body as any).setVelocity(0, 0);
   }
 }

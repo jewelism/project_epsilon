@@ -1,5 +1,5 @@
 import { Player } from '@/phaser/objects/Player';
-import { makeSafeArea } from '@/phaser/utils/helper';
+import { makesafeZone } from '@/phaser/utils/helper';
 
 const GAME = {
   ZOOM: 2,
@@ -8,12 +8,13 @@ export class InGameScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   player: Player;
   obstacles: Phaser.Physics.Arcade.Group;
+  safeZone: Phaser.Geom.Rectangle[];
 
   create() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
-    const { map, playerSpawnPoints, SafeAreaPoints, obstacleSpawnPoints } = this.createMap(this);
+    const { map, playerSpawnPoints, safeZonePoints, obstacleSpawnPoints } = this.createMap(this);
 
     this.player = new Player(this, {
       x: playerSpawnPoints.x,
@@ -22,8 +23,7 @@ export class InGameScene extends Phaser.Scene {
       frameNo: 0,
       nick: '쥬얼리1',
     });
-    const asdf = makeSafeArea(this, SafeAreaPoints);
-    console.log('SafeAreaPoints', SafeAreaPoints, asdf);
+    this.safeZone = makesafeZone(this, safeZonePoints);
 
     this.createObstacle(obstacleSpawnPoints);
 
@@ -36,6 +36,18 @@ export class InGameScene extends Phaser.Scene {
       player.disabled.value = true;
     });
   }
+  update(time: number, delta: number): void {
+    this.player.disabled.value = !this.isPlayerInsafeZone();
+  }
+  isPlayerInsafeZone() {
+    const isSafe = this.safeZone.some((safeZone) =>
+      Phaser.Geom.Rectangle.ContainsPoint(
+        safeZone,
+        new Phaser.Geom.Point(this.player.body.x, this.player.body.y),
+      ),
+    );
+    return isSafe;
+  }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
       key: 'map',
@@ -46,15 +58,15 @@ export class InGameScene extends Phaser.Scene {
     const playerSpawnPoints = map.findObject('PlayerSpawn', ({ name }) => {
       return name.includes('PlayerSpawn');
     });
-    const SafeAreaPoints = map.filterObjects('SafeArea', ({ name }) => {
-      return name.includes('SafeArea');
+    const safeZonePoints = map.filterObjects('safeZone', ({ name }) => {
+      return name.includes('safeZone');
     });
     const obstacleSpawnPoints = map.filterObjects('ObstacleSpawn', ({ name }) => {
       return name.includes('ObstacleSpawn');
     });
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-    return { map, playerSpawnPoints, SafeAreaPoints, obstacleSpawnPoints };
+    return { map, playerSpawnPoints, safeZonePoints, obstacleSpawnPoints };
   }
   createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
     // obstacleSpawnPoints.forEach(({ x, y }) => {});
