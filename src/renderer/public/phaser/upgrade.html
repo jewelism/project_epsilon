@@ -1,0 +1,112 @@
+<style>
+  button {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    padding: 5px 10px;
+    min-width: 200px;
+  }
+  .keydown {
+    background-color: #ccc;
+  }
+  .upgrade-icon-wrap {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 1px solid #000;
+    margin-right: 10px;
+  }
+  .upgrade-icon-wrap > span {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    font-size: 10px;
+  }
+  .current-desc-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .upgrade-current-cost {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+  }
+  #cost {
+    display: flex;
+    align-items: center;
+  }
+  #desc {
+    color: #999;
+    font-size: 12px;
+    margin-top: 3px;
+  }
+  .upgrade-icon {
+    width: 32px;
+    height: 32px;
+    background-image: url('phaser/ui/upgrade_icon32x32.png');
+    zoom: 0.6;
+  }
+  .sword1 {
+    background-position: 0 0;
+  }
+  .fist {
+    background-position: 0 -96px;
+  }
+  .defence1 {
+    background-position: -64px -32px;
+  }
+  .boots {
+    background-position: -64px -64px;
+  }
+  .rock-icon {
+    width: 31px;
+    height: 29px;
+    background-image: url('phaser/objects/rock31x29.png');
+    zoom: 0.4;
+    margin-right: 10px;
+  }
+  .tree-icon {
+    width: 45px;
+    height: 45px;
+    background-image: url('phaser/objects/tree45x45.png');
+    background-position: 0 0;
+    zoom: 0.25;
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  .gold-icon {
+    width: 16px;
+    height: 16px;
+    background-image: url('phaser/objects/Stones_ores_gems_without_grass_x16.png');
+    background-position: -96px -48px;
+    /* background-position: 16px 96px; */
+    zoom: 1;
+    margin-left: 5px;
+    position: relative;
+    top: -1px;
+  }
+</style>
+<button type="button" id="button">
+  <div class="upgrade-icon-wrap">
+    <div id="upgrade-icon" class="upgrade-icon"></div>
+    <span id="shortcutText"></span>
+  </div>
+  <div class="current-desc-wrap">
+    <div class="upgrade-current-cost">
+      <div id="cost">
+        <div class="rock-icon"></div>
+        <span id="rock">1</span>
+        <div class="tree-icon"></div>
+        <span id="tree">1</span>
+        <div class="gold-icon"></div>
+        <span id="gold">0</span>
+      </div>
+    </div>
+    <div id="desc"></div>
+  </div>
+</button>
+<br />
