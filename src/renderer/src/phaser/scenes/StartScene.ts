@@ -13,7 +13,7 @@ export class StartScene extends Phaser.Scene {
   create() {
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    const title = new TitleText(this, 'Project Delta');
+    const title = new TitleText(this, 'Escape from Zoo');
 
     // const icon = this.add.image(400, 300, 'icon');
     const element = this.add.dom(title.x, 400).createFromCache('multiplay_form');

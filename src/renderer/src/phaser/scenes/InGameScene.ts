@@ -53,7 +53,7 @@ export class InGameScene extends Phaser.Scene {
       key: 'map',
     });
     const bgTiles = map.addTilesetImage('16tiles', '16tiles');
-    const bgLayer = map.createLayer('bg', bgTiles);
+    map.createLayer('bg', bgTiles);
 
     const playerSpawnPoints = map.findObject('PlayerSpawn', ({ name }) => {
       return name.includes('PlayerSpawn');

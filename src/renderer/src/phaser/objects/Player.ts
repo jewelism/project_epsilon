@@ -17,7 +17,20 @@ export class Player {
       );
     this.body.preUpdate = this.preUpdate.bind(this);
 
-    scene.input.on('pointerdown', (pointer) => {
+    this.mouseClickMove(scene, { spriteKey, frameNo });
+    effect(() => {
+      if (!this.disabled.value) {
+        return;
+      }
+      this.playerDead(scene);
+    });
+  }
+  preUpdate() {
+    this.stopWhenMouseTarget();
+  }
+  mouseClickMove(scene: Phaser.Scene, { spriteKey, frameNo }) {
+    scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      this.mouseClickEffect(scene, pointer);
       if (this.disabled.value) {
         return;
       }
@@ -26,22 +39,6 @@ export class Player {
       this.body.flipSpriteByDirection();
       this.body.sprite.anims.play(`${spriteKey}_move${frameNo}`, true);
     });
-    effect(() => {
-      if (!this.disabled.value) {
-        return;
-      }
-      this.stopMove();
-      this.body.sprite.setTint(0xff0000);
-      scene.tweens.add({
-        targets: this.body,
-        angle: 360,
-        duration: 1000,
-        repeat: -1,
-      });
-    });
-  }
-  preUpdate() {
-    this.stopWhenMouseTarget();
   }
   stopWhenMouseTarget() {
     if (!this.targetToMove) {
@@ -62,7 +59,29 @@ export class Player {
     this.targetToMove = null;
     this.stopMove();
   }
+  mouseClickEffect(scene: Phaser.Scene, pointer: Phaser.Input.Pointer) {
+    let circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
+    scene.tweens.add({
+      targets: circle,
+      scaleX: 0.1,
+      scaleY: 0.1,
+      alpha: 0,
+      duration: 750,
+      ease: 'Power2',
+      onComplete: () => circle.destroy(),
+    });
+  }
   stopMove() {
     (this.body.body as any).setVelocity(0, 0);
+  }
+  playerDead(scene: Phaser.Scene) {
+    this.stopMove();
+    this.body.sprite.setTint(0xff0000);
+    scene.tweens.add({
+      targets: this.body,
+      angle: 360,
+      duration: 1000,
+      repeat: -1,
+    });
   }
 }
