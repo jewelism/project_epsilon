@@ -1,23 +1,39 @@
+import { defaultTextStyle } from '@/phaser/constants';
 import { Animal } from '@/phaser/objects/Animal';
-import { signal } from '@preact/signals-core';
+import { effect, signal } from '@preact/signals-core';
 
 export class Player {
   body: Animal;
-  keyboard: Record<string, Phaser.Input.Keyboard.Key> = {};
   targetToMove: Phaser.Math.Vector2 | null = null;
   disabled = signal(false);
 
-  constructor(scene: Phaser.Scene, { x, y, hp, spriteKey, frameNo }) {
-    this.body = new Animal(scene, { x, y, hp, spriteKey, frameNo });
-    this.body.moveSpeed = 70;
-    this.body.setDepth(999);
+  constructor(scene: Phaser.Scene, { x, y, spriteKey, frameNo, nick }) {
+    this.body = new Animal(scene, { x, y, spriteKey, frameNo })
+      .setDepth(9)
+      .add(
+        new Phaser.GameObjects.Text(scene, 0, 0, nick, defaultTextStyle)
+          .setOrigin(0.5, 1.5)
+          .setAlpha(0.75),
+      );
     this.body.preUpdate = this.preUpdate.bind(this);
 
     scene.input.on('pointerdown', (pointer) => {
       this.targetToMove = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
-      scene.physics.moveToObject(this.body, this.targetToMove, this.body.moveSpeed);
+      scene.physics.moveToObject(this.body, this.targetToMove, this.body.moveSpeed.value);
       this.body.flipSpriteByDirection();
       this.body.sprite.anims.play(`${spriteKey}_move${frameNo}`, true);
+    });
+    effect(() => {
+      if (!this.disabled.value) {
+        return;
+      }
+      this.body.sprite.setTint(0xff0000);
+      scene.tweens.add({
+        targets: this.body,
+        angle: 360,
+        duration: 1000,
+        repeat: -1,
+      });
     });
   }
   preUpdate() {

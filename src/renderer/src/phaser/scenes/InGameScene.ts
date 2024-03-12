@@ -18,12 +18,12 @@ export class InGameScene extends Phaser.Scene {
     this.player = new Player(this, {
       x: playerSpawnPoints.x,
       y: playerSpawnPoints.y,
-      hp: 1000,
       spriteKey: 'pixel_animals',
       frameNo: 0,
+      nick: '쥬얼리1',
     });
-    console.log('SafeAreaPoints', SafeAreaPoints);
     const asdf = makeSafeArea(this, SafeAreaPoints);
+    console.log('SafeAreaPoints', SafeAreaPoints, asdf);
 
     this.createObstacle(obstacleSpawnPoints);
 
