@@ -12,7 +12,7 @@
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "all": true
     },
     "bundle": {
       "active": true,
@@ -48,7 +48,7 @@
       }
     },
     "security": {
-      "csp": null
+      "csp": ""
     },
     "updater": {
       "active": false
@@ -59,7 +59,8 @@
         "height": 600,
         "resizable": true,
         "title": "epsilon",
-        "width": 800
+        "width": 800,
+        "additionalBrowserArgs": "--disable-web-security"
       }
     ]
   }

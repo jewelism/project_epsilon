@@ -85,14 +85,13 @@ export class InGameScene extends Phaser.Scene {
   createSocketConnection() {
     // TODO: path localStorage로 변경하기
     this.socket = io("http://localhost:20058");
-    console.log(this.socket, this.socket.on);
 
+    this.socket.on("connect", function () {
+      console.log("connect");
+    });
     this.socket.on?.("playerMoved", function (movementData) {
       console.log("playerMoved", movementData);
       this.player.moveToXY(movementData.x, movementData.y);
-
-      // this.player.body.x = movementData.x;
-      // this.player.body.y = movementData.y;
     });
   }
   constructor() {
