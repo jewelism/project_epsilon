@@ -1,4 +1,4 @@
-# project-delt
+# project-epsilon
 
 A minimal Electron application with TypeScript
 
