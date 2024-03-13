@@ -1,4 +1,4 @@
-import { createPhaser } from '@/phaser';
+import { createPhaser } from '@/phaser/index';
 
 function init(): void {
   window.addEventListener('DOMContentLoaded', () => {
@@ -7,3 +7,12 @@ function init(): void {
 }
 
 init();
+
+declare global {
+  interface Window {
+    io: any;
+    signal: any;
+    effect: any;
+    phaser: any;
+  }
+}

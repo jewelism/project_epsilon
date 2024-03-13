@@ -1,6 +1,6 @@
 import { Player } from '@/phaser/objects/Player';
 import { makesafeZone } from '@/phaser/utils/helper';
-
+// TODO: 스테이지 구성하기전에 멀티플레이 추가하고 되살리기 추가하기
 const GAME = {
   ZOOM: 2,
 };
@@ -9,8 +9,10 @@ export class InGameScene extends Phaser.Scene {
   player: Player;
   obstacles: Phaser.Physics.Arcade.Group;
   safeZone: Phaser.Geom.Rectangle[];
+  socket: any;
 
   create() {
+    this.createSocketConnection();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
@@ -71,7 +73,19 @@ export class InGameScene extends Phaser.Scene {
   createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
     // obstacleSpawnPoints.forEach(({ x, y }) => {});
   }
+  createSocketConnection() {
+    // TODO: path localStorage로 변경하기
+    this.socket = window.io('http://localhost:20058');
+    console.log(this.socket, this.socket.on);
 
+    this.socket.on?.('playerMoved', function (movementData) {
+      console.log('playerMoved', movementData);
+      this.player.moveToXY(movementData.x, movementData.y);
+
+      // this.player.body.x = movementData.x;
+      // this.player.body.y = movementData.y;
+    });
+  }
   constructor() {
     super('InGameScene');
   }

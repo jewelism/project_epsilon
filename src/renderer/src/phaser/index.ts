@@ -1,7 +1,5 @@
-import * as Phaser from 'phaser';
-
-import { StartScene } from '@/phaser/scenes/StartScene';
-import { MultiplayLobbyScene } from '@/phaser/scenes/MultiplayLobbyScene';
+// import { StartScene } from '@/phaser/scenes/StartScene';
+// import { MultiplayLobbyScene } from '@/phaser/scenes/MultiplayLobbyScene';
 import { InGameScene } from '@/phaser/scenes/InGameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -48,4 +46,4 @@ const config: Phaser.Types.Core.GameConfig = {
   // },
 };
 
-export const createPhaser = () => new Phaser.Game(config);
+export const createPhaser = () => new window.Phaser.Game(config);

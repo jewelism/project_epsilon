@@ -30,6 +30,9 @@ io.on('connection', (socket) => {
   socket.on('test', (msg) => {
     console.log('test received', msg);
   });
+  socket.on('playerMovement', (movementData) => {
+    socket.broadcast.emit('playerMoved', movementData);
+  });
 });
 
 function createWindow(): void {
@@ -48,9 +51,13 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
+      nodeIntegration: false, // is default value after Electron v5
+      contextIsolation: true, // protect against prototype pollution
+      // nodeIntegration: true,
+      // enableRemoteModule: false, // turn off remote
     },
   });
-
+  mainWindow.webContents.openDevTools();
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
   });

@@ -1,11 +1,12 @@
 import { defaultTextStyle } from '@/phaser/constants';
 import { Animal } from '@/phaser/objects/Animal';
-import { effect, signal } from '@preact/signals-core';
+import { InGameScene } from '@/phaser/scenes/InGameScene';
 
 export class Player {
   body: Animal;
   targetToMove: Phaser.Math.Vector2 | null = null;
-  disabled = signal(false);
+  disabled = window.signal(false);
+  oldPosition: undefined | { x: number; y: number };
 
   constructor(scene: Phaser.Scene, { x, y, spriteKey, frameNo, nick }) {
     this.body = new Animal(scene, { x, y, spriteKey, frameNo })
@@ -17,8 +18,8 @@ export class Player {
       );
     this.body.preUpdate = this.preUpdate.bind(this);
 
-    this.mouseClickMove(scene, { spriteKey, frameNo });
-    effect(() => {
+    this.mouseClickMove(scene);
+    window.effect(() => {
       if (!this.disabled.value) {
         return;
       }
@@ -28,16 +29,23 @@ export class Player {
   preUpdate() {
     this.stopWhenMouseTarget();
   }
-  mouseClickMove(scene: Phaser.Scene, { spriteKey, frameNo }) {
+  moveToXY(x: number, y: number) {
+    this.targetToMove = new Phaser.Math.Vector2(x, y);
+    this.body.scene.physics.moveToObject(this.body, this.targetToMove, this.body.moveSpeed.value);
+    this.body.flipSpriteByDirection();
+    this.body.sprite.anims.play(`${this.body.spriteKey}_move${this.body.frameNo}`, true);
+  }
+  mouseClickMove(scene: Phaser.Scene) {
     scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.mouseClickEffect(scene, pointer);
       if (this.disabled.value) {
         return;
       }
-      this.targetToMove = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
-      scene.physics.moveToObject(this.body, this.targetToMove, this.body.moveSpeed.value);
-      this.body.flipSpriteByDirection();
-      this.body.sprite.anims.play(`${spriteKey}_move${frameNo}`, true);
+      this.moveToXY(pointer.worldX, pointer.worldY);
+      (scene as InGameScene).socket.emit?.('playerMovement', {
+        x: pointer.worldX,
+        y: pointer.worldY,
+      });
     });
   }
   stopWhenMouseTarget() {

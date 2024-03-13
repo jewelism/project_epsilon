@@ -1,9 +1,8 @@
 import { TitleText } from '@/phaser/ui/TitleText';
-import { Socket, io } from 'socket.io-client';
 
 export class MultiplayLobbyScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  socket: Socket;
+  socket: any;
 
   constructor() {
     super('MultiplayLobbyScene');
@@ -16,7 +15,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     this.socket = this.getSocketConnection();
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    const title = new TitleText(this, 'Lobby');
+    new TitleText(this, 'Lobby');
 
     // const icon = this.add.image(400, 300, 'icon');
 
@@ -44,7 +43,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     this.input.on('pointerdown', onKeydown);
   }
   getSocketConnection() {
-    const socket = io(`http://localhost:20058`);
+    const socket = window.io(`http://localhost:20058`);
     socket.on('error', (e) => {
       console.log(e); // not displayed
     });

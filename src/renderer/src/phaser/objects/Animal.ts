@@ -1,7 +1,5 @@
-import { signal } from '@preact/signals-core';
-
 export class Animal extends Phaser.GameObjects.Container {
-  moveSpeed = signal(80);
+  moveSpeed = window.signal(80);
   sprite: Phaser.Physics.Arcade.Sprite;
   frameNo: number;
   spriteKey: string;
