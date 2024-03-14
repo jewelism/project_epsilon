@@ -12,6 +12,7 @@ export class InGameScene extends Phaser.Scene {
   obstacles: Phaser.Physics.Arcade.Group;
   safeZone: Phaser.Geom.Rectangle[];
   socket: any;
+  ws: WebSocket;
 
   create() {
     this.createSocketConnection();
@@ -48,25 +49,37 @@ export class InGameScene extends Phaser.Scene {
   update(_time: number, _delta: number): void {
     this.player.disabled.value = !this.isPlayerInsafeZone();
   }
+  _updateResponse(returnValue) {
+    const msg = document.createElement("p");
+    msg.textContent =
+      typeof returnValue === "string"
+        ? returnValue
+        : JSON.stringify(returnValue);
+    document.querySelector("#response-container")?.appendChild(msg);
+  }
   async createSocketConnection() {
     // TODO: path localStorage로 변경하기
-    // this.socket = io("http://localhost:20058");
 
-    const ws = await WebSocket.connect("ws://127.0.0.1:8080");
-    ws.addListener(function (event) {
-      ws.send("Hello Server!");
-    });
-    await ws.send("Hello World");
+    try {
+      this.ws = await WebSocket.connect("ws://127.0.0.1:20058").then((r) => {
+        console.log("Connected asdfasdf");
 
+        this._updateResponse("Connected");
+        return r;
+      });
+    } catch (e) {
+      this._updateResponse(e);
+    }
+    this.ws.addListener(this._updateResponse);
     // await ws.disconnect();
 
-    this.socket.on("connect", function () {
-      console.log("connect");
-    });
-    this.socket.on?.("playerMoved", function (movementData) {
-      console.log("playerMoved", movementData);
-      this.player.moveToXY(movementData.x, movementData.y);
-    });
+    // this.socket.on("connect", function () {
+    //   console.log("connect");
+    // });
+    // this.socket.on?.("playerMoved", function (movementData) {
+    //   console.log("playerMoved", movementData);
+    //   this.player.moveToXY(movementData.x, movementData.y);
+    // });
   }
   isPlayerInsafeZone() {
     const isSafe = this.safeZone.some((safeZone) =>

@@ -1,128 +1,38 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(
+  all(not(debug_assertions), target_os = "windows"),
+  windows_subsystem = "windows"
+)]
 
+use futures_util::StreamExt;
+use tokio::net::{TcpListener, TcpStream};
 
-use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+async fn start_server() {
+  let addr = "127.0.0.1:20058".to_string();
 
-use hyper::server::conn::http1;
-use hyper_util::rt::TokioIo;
-use serde_json::Value;
-use socketioxide::{
-    extract::{AckSender, Bin, Data, SocketRef},
-    SocketIo,
-};
-use tokio::net::TcpListener;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+  // Create the event loop and TCP listener we'll accept connections on.
+  let try_socket = TcpListener::bind(&addr).await;
+  let listener = try_socket.expect("Failed to bind");
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-   format!("Hello, {}!", name)
+  while let Ok((stream, _)) = listener.accept().await {
+    tokio::spawn(accept_connection(stream));
+  }
 }
 
-#[derive(Serialize, Deserialize)]
-struct PlayerPoint {
-  x: i32,
-  y: i32,
+async fn accept_connection(stream: TcpStream) {
+  let ws_stream = tokio_tungstenite::accept_async(stream)
+    .await
+    .expect("Error during the websocket handshake occurred");
+
+  let (write, read) = ws_stream.split();
+  if let Err(e) = read.forward(write).await {
+    eprintln!("Error: {}", e);
+  }
 }
 
-fn on_connect(socket: SocketRef, Data(data): Data<Value>) {
-  println!("Message from Rust: {}", socket.id);
-  info!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
-  socket.emit("auth", data).ok();
-
-  socket.on(
-      "message",
-      |socket: SocketRef, Data::<Value>(data), Bin(bin)| {
-          info!("Received event: {:?} {:?}", data, bin);
-          socket.bin(bin).emit("message-back", data).ok();
-      },
-  );
-
-  socket.on(
-      "message-with-ack",
-      |Data::<Value>(data), ack: AckSender, Bin(bin)| {
-          info!("Received event: {:?} {:?}", data, bin);
-          ack.bin(bin).send(data).ok();
-      },
-  );
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-  info!("Starting server");
-  let subscriber = FmtSubscriber::builder()
-        .with_line_number(true)
-        .with_max_level(Level::TRACE)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber)?;
-
-    let (svc, io) = SocketIo::new_svc();
-
-    io.ns("/", on_connect);
-
-    let addr = SocketAddr::from(([127, 0, 0, 1], 20058));
-    let listener = TcpListener::bind(addr).await?;
-    
-    // 소켓 서버를 수용하는 루프를 별도의 비동기 태스크로 실행
-  let server_task = tokio::spawn(async move {
-    println!("await server0");
-    loop {
-      println!("await server1");
-      let (stream, _) = listener.accept().await.unwrap();
-      let io = TokioIo::new(stream);
-      let svc = svc.clone();
-      println!("await server2");
-
-      tokio::task::spawn(async move {
-        if let Err(err) = http1::Builder::new()
-            .serve_connection(io, svc)
-            .with_upgrades()
-            .await
-        {
-            println!("Error serving connection: {:?}", err);
-        }
-      });
-    }
-  });
-
-  // Tauri 애플리케이션 실행
+fn main() {
+  tauri::async_runtime::spawn(start_server());
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![greet])
     .plugin(tauri_plugin_websocket::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
-
-  // 서버 태스크가 완료될 때까지 기다림 (이 경우에는 무한 루프이므로 실제로는 완료되지 않음)
-  server_task.await.unwrap();
-
-  Ok(())
-    // tauri::Builder::default()
-    //   .invoke_handler(tauri::generate_handler![greet])
-    //   .run(tauri::generate_context!())
-    //   .expect("error while running tauri application");
-    // // We start a loop to continuously accept incoming connections
-    // loop {
-    //   println!("await server1");
-    //     let (stream, _) = listener.accept().await?;
-    //     println!("await server2");
-
-    //     // Use an adapter to access something implementing `tokio::io` traits as if they implement
-    //     // `hyper::rt` IO traits.
-    //     let io = TokioIo::new(stream);
-    //     let svc = svc.clone();
-
-    //     // Spawn a tokio task to serve multiple connections concurrently
-    //     tokio::task::spawn(async move {
-    //         // Finally, we bind the incoming connection to our `hello` service
-    //         if let Err(err) = http1::Builder::new()
-    //             .serve_connection(io, svc)
-    //             .with_upgrades()
-    //             .await
-    //         {
-    //             println!("Error serving connection: {:?}", err);
-    //         }
-    //     });
-    // }
 }

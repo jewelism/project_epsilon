@@ -21,8 +21,6 @@ export class Player {
 
     this.mouseClickMove(scene);
     effect(() => {
-      console.log("player dead effect");
-
       if (!this.disabled.value) {
         return;
       }
@@ -95,7 +93,6 @@ export class Player {
     (this.body.body as any).setVelocity(0, 0);
   }
   playerDead(scene: Phaser.Scene) {
-    console.log("player dead");
     this.stopMove();
     this.body.sprite.setTint(0xff0000);
 
