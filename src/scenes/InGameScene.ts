@@ -13,28 +13,32 @@ export class InGameScene extends Phaser.Scene {
   safeZone: Phaser.Geom.Rectangle[];
   socket: any;
   ws: WebSocket;
+  players: Player[];
+  playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
+  map: Phaser.Tilemaps.Tilemap;
 
   create() {
-    this.createSocketConnection();
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
     const { map, playerSpawnPoints, safeZonePoints, obstacleSpawnPoints } =
       this.createMap(this);
-
-    this.player = new Player(this, {
-      x: playerSpawnPoints.x,
-      y: playerSpawnPoints.y,
-      spriteKey: "pixel_animals",
-      frameNo: 0,
-      nick: "쥬얼리1",
-    });
+    this.map = map;
+    this.playerSpawnPoints = playerSpawnPoints;
     this.safeZone = makesafeZone(this, safeZonePoints);
+    this.createSocketConnection();
 
     // this.createObstacle(obstacleSpawnPoints);
-
+  }
+  update(_time: number, _delta: number): void {
+    if (!this.player) {
+      return;
+    }
+    this.player.disabled.value = !this.isPlayerInsafeZone();
+  }
+  onMyPlayerCreated() {
     this.cameras.main
-      .setBounds(0, 0, map.heightInPixels, map.widthInPixels)
+      .setBounds(0, 0, this.map.heightInPixels, this.map.widthInPixels)
       .startFollow(this.player.body, false)
       .setZoom(GAME.ZOOM);
 
@@ -46,31 +50,46 @@ export class InGameScene extends Phaser.Scene {
       }
     );
   }
-  update(_time: number, _delta: number): void {
-    this.player.disabled.value = !this.isPlayerInsafeZone();
-  }
   _updateResponse(value) {
     const data = JSON.parse(value?.data ?? "{}");
     console.log("returnValue", value, data);
+    if (data.type === "join") {
+      const newPlayer = new Player(this, {
+        x: this.playerSpawnPoints.x,
+        y: this.playerSpawnPoints.y,
+        spriteKey: "pixel_animals",
+        frameNo: 0,
+        nick: data.nick,
+        wsId: data.id,
+      });
+      if (data.id === this.ws.id) {
+        this.player = newPlayer;
+        this.onMyPlayerCreated();
+      }
+      this.players.push(newPlayer);
+    }
+    if (data.type === "move") {
+      const player = this.players.find(({ wsId }) => wsId === data.id);
+      player.moveToXY(data.x, data.y);
+    }
   }
   async createSocketConnection() {
     // TODO: path localStorage로 변경하기
 
     try {
       this.ws = await WebSocket.connect("ws://127.0.0.1:20058");
+      this.ws.send(
+        JSON.stringify({
+          type: "join",
+          nick: `jew${Phaser.Math.Between(0, 999)}`,
+          id: this.ws.id,
+        })
+      );
+
       this.ws.addListener(this._updateResponse);
     } catch (e) {
       console.error("jew ws connection failed");
     }
-    // await ws.disconnect();
-
-    // this.socket.on("connect", function () {
-    //   console.log("connect");
-    // });
-    // this.socket.on?.("playerMoved", function (movementData) {
-    //   console.log("playerMoved", movementData);
-    //   this.player.moveToXY(movementData.x, movementData.y);
-    // });
   }
   isPlayerInsafeZone() {
     const isSafe = this.safeZone.some((safeZone) =>

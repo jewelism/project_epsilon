@@ -38,6 +38,19 @@ async fn accept_connection(stream: TcpStream) {
 fn main() {
   
   tauri::Builder::default()
+  .setup(|app| {
+    let docs_window = tauri::WindowBuilder::new(
+      app,
+      "local2", /* the unique window label */
+      tauri::WindowUrl::App("index.html".into())
+    ).build()?;
+      let local_window = tauri::WindowBuilder::new(
+        app,
+        "local",
+        tauri::WindowUrl::App("index.html".into())
+      ).build()?;
+      Ok(())
+    })
     .invoke_handler(tauri::generate_handler![serving])  
     .plugin(tauri_plugin_websocket::init())
     .run(tauri::generate_context!())
