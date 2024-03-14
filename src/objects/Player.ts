@@ -46,16 +46,18 @@ export class Player {
   mouseClickMove(scene: Phaser.Scene) {
     scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.mouseClickEffect(scene, pointer);
-      console.log("pointerdown");
-
       if (this.disabled.value) {
         return;
       }
       this.moveToXY(pointer.worldX, pointer.worldY);
-      (scene as InGameScene).socket.emit?.("playerMovement", {
-        x: pointer.worldX,
-        y: pointer.worldY,
-      });
+      (scene as InGameScene).ws.send(
+        JSON.stringify({
+          id: (scene as InGameScene).ws.id,
+          type: "move",
+          x: pointer.worldX.toFixed(1),
+          y: pointer.worldY.toFixed(1),
+        })
+      );
     });
   }
   stopWhenMouseTarget() {

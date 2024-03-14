@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api";
 import { TitleText } from "@/ui/TitleText";
 
 export class StartScene extends Phaser.Scene {
@@ -27,10 +28,15 @@ export class StartScene extends Phaser.Scene {
         this.scene.start("InGameScene");
       }
       if (name === "createMulti") {
-        this.scene.start("MultiplayLobbyScene");
+        invoke("serving", { name: "World" }).then((response) => {
+          console.log(response); // prints `Hello, World!`
+        });
+        // this.scene.start("MultiplayLobbyScene");
+        this.scene.start("InGameScene");
       }
       if (name === "joinMulti") {
-        this.scene.start("MultiplayLobbyScene");
+        // this.scene.start("MultiplayLobbyScene");
+        this.scene.start("InGameScene");
       }
     });
     // const pressAnyKeyText = this.add

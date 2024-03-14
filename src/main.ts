@@ -2,8 +2,8 @@ import { invoke } from "@tauri-apps/api";
 import viteLogo from "/vite.svg";
 
 import Phaser from "phaser";
-// import { StartScene } from '@/phaser/scenes/StartScene';
-// import { MultiplayLobbyScene } from '@/phaser/scenes/MultiplayLobbyScene';
+import { StartScene } from "@/scenes/StartScene";
+import { MultiplayLobbyScene } from "@/scenes/MultiplayLobbyScene";
 import { InGameScene } from "@/scenes/InGameScene";
 
 // 명령을 호출해볼 수 있습니다!
@@ -14,10 +14,7 @@ import { InGameScene } from "@/scenes/InGameScene";
 //   .then((response) => console.log(response));
 
 const config: Phaser.Types.Core.GameConfig = {
-  scene: [
-    // StartScene, MultiplayLobbyScene,
-    InGameScene,
-  ],
+  scene: [StartScene, MultiplayLobbyScene, InGameScene],
   title: "project epsilon",
   url: "jewelism.github.io",
   // type: Phaser.WEBGL,

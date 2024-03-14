@@ -6,6 +6,12 @@
 use futures_util::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
 
+#[tauri::command]
+fn serving(name: &str) -> String {
+  tauri::async_runtime::spawn(start_server());
+  format!("Hello, {}!", name)
+}
+
 async fn start_server() {
   let addr = "127.0.0.1:20058".to_string();
 
@@ -30,8 +36,9 @@ async fn accept_connection(stream: TcpStream) {
 }
 
 fn main() {
-  tauri::async_runtime::spawn(start_server());
+  
   tauri::Builder::default()
+    .invoke_handler(tauri::generate_handler![serving])  
     .plugin(tauri_plugin_websocket::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

@@ -1,4 +1,4 @@
-import { io } from "socket.io-client";
+import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
 
 export class MultiplayLobbyScene extends Phaser.Scene {
@@ -43,14 +43,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     this.input.keyboard.on("keydown", onKeydown);
     this.input.on("pointerdown", onKeydown);
   }
-  getSocketConnection() {
-    const socket = io(`http://localhost:20058`);
-    socket.on("error", (e) => {
-      console.log(e); // not displayed
-    });
-    socket.on("connect", () => {
-      console.log("connected renderer", localStorage.getItem("token")); // displayed
-    });
-    return socket;
+  async getSocketConnection() {
+    const ws = await WebSocket.connect("ws://localhost:20058");
+    ws.addListener((value) => {});
+    return ws;
   }
 }

@@ -49,28 +49,19 @@ export class InGameScene extends Phaser.Scene {
   update(_time: number, _delta: number): void {
     this.player.disabled.value = !this.isPlayerInsafeZone();
   }
-  _updateResponse(returnValue) {
-    const msg = document.createElement("p");
-    msg.textContent =
-      typeof returnValue === "string"
-        ? returnValue
-        : JSON.stringify(returnValue);
-    document.querySelector("#response-container")?.appendChild(msg);
+  _updateResponse(value) {
+    const data = JSON.parse(value?.data ?? "{}");
+    console.log("returnValue", value, data);
   }
   async createSocketConnection() {
     // TODO: path localStorage로 변경하기
 
     try {
-      this.ws = await WebSocket.connect("ws://127.0.0.1:20058").then((r) => {
-        console.log("Connected asdfasdf");
-
-        this._updateResponse("Connected");
-        return r;
-      });
+      this.ws = await WebSocket.connect("ws://127.0.0.1:20058");
+      this.ws.addListener(this._updateResponse);
     } catch (e) {
-      this._updateResponse(e);
+      console.error("jew ws connection failed");
     }
-    this.ws.addListener(this._updateResponse);
     // await ws.disconnect();
 
     // this.socket.on("connect", function () {
