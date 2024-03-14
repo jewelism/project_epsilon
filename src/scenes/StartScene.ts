@@ -8,7 +8,7 @@ export class StartScene extends Phaser.Scene {
     super("StartScene");
   }
   preload() {
-    this.load.html("multiplay_form", "phaser/multiplay_form.html");
+    this.load.html("main_form", "phaser/main_form.html");
     // this.load.image('icon', 'phaser/icon.png');
   }
   create() {
@@ -17,26 +17,21 @@ export class StartScene extends Phaser.Scene {
     const title = new TitleText(this, "Escape from Zoo");
 
     // const icon = this.add.image(400, 300, 'icon');
-    const element = this.add
-      .dom(title.x, 400)
-      .createFromCache("multiplay_form");
+    const element = this.add.dom(title.x, 400).createFromCache("main_form");
     element.addListener("click");
     element.on("click", ({ target: { name } }) => {
-      console.log("click", name);
-
       if (name === "singleplayButton") {
         this.scene.start("InGameScene");
       }
       if (name === "createMulti") {
-        invoke("serving", { name: "World" }).then((response) => {
-          console.log(response); // prints `Hello, World!`
-        });
-        // this.scene.start("MultiplayLobbyScene");
-        this.scene.start("InGameScene");
+        invoke("serving", { name: "World" });
+        this.scene.start("MultiplayLobbyScene", { host: true });
+        // this.scene.start("InGameScene");
       }
       if (name === "joinMulti") {
         // this.scene.start("MultiplayLobbyScene");
-        this.scene.start("InGameScene");
+        this.scene.start("MultiplayLobbyScene", { host: false });
+        // this.scene.start("InGameScene");
       }
     });
     // const pressAnyKeyText = this.add

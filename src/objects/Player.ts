@@ -8,8 +8,10 @@ export class Player {
   targetToMove: Phaser.Math.Vector2 | null = null;
   disabled = signal(false);
   oldPosition: undefined | { x: number; y: number };
+  wsId: number;
 
-  constructor(scene: Phaser.Scene, { x, y, spriteKey, frameNo, nick }) {
+  constructor(scene: Phaser.Scene, { x, y, spriteKey, frameNo, nick, wsId }) {
+    this.wsId = wsId;
     this.body = new Animal(scene, { x, y, spriteKey, frameNo })
       .setDepth(9)
       .add(
