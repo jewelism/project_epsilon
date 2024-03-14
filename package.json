@@ -14,7 +14,8 @@
     "@preact/signals-core": "^1.5.1",
     "@tauri-apps/api": "^1.5.3",
     "phaser": "^3.80.1",
-    "socket.io-client": "^4.7.4"
+    "socket.io-client": "^4.7.4",
+    "tauri-plugin-websocket-api": "github:tauri-apps/tauri-plugin-websocket#v1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.5.11",
