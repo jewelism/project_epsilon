@@ -52,8 +52,10 @@ export class InGameScene extends Phaser.Scene {
     // TODO: path localStorage로 변경하기
     // this.socket = io("http://localhost:20058");
 
-    const ws = await WebSocket.connect("ws://localhost:20058");
-
+    const ws = await WebSocket.connect("ws://127.0.0.1:8080");
+    ws.addListener(function (event) {
+      ws.send("Hello Server!");
+    });
     await ws.send("Hello World");
 
     // await ws.disconnect();

@@ -67,10 +67,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // 소켓 서버를 수용하는 루프를 별도의 비동기 태스크로 실행
   let server_task = tokio::spawn(async move {
+    println!("await server0");
     loop {
+      println!("await server1");
       let (stream, _) = listener.accept().await.unwrap();
       let io = TokioIo::new(stream);
       let svc = svc.clone();
+      println!("await server2");
 
       tokio::task::spawn(async move {
         if let Err(err) = http1::Builder::new()
@@ -87,6 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // Tauri 애플리케이션 실행
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![greet])
+    .plugin(tauri_plugin_websocket::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 
