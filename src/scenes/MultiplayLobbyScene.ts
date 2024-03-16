@@ -66,8 +66,12 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     await this.getSocketConnection();
   }
   async getSocketConnection() {
+    let ws;
     try {
-      const ws = await WebSocket.connect("ws://localhost:20058");
+      ws = await WebSocket.connect("ws://localhost:20058").then((r) => {
+        console.log("connected", r);
+        return r;
+      });
       console.log("host", this.isHost, ws.id);
 
       if (!this.isHost) {
@@ -77,30 +81,36 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         this.players = [{ id: ws.id, nick: `p${ws.id}` }];
         this.text2.setText(`waiting for players ${ws.id}`);
       }
-      ws.addListener((value) => {
-        console.log("value", value);
-        const data = JSON.parse(value.data as any);
-        if (data.type === "join") {
-          console.log("join", data);
-          if (this.isHost) {
-            ws.send(
-              JSON.stringify({
-                type: "players",
-                players: [...this.players, data],
-              })
-            );
-          }
-        }
-        if (data.type === "players") {
-          console.log("players", data.players);
-          this.players = data.players;
-          this.text2.setText(`players: ${JSON.stringify(this.players)}`);
-        }
-      });
-      // ws.send(JSON.stringify({ type: "join", id: ws.id }));
-      //
+      ws.send(
+        JSON.stringify({
+          type: "test",
+          id: ws.id,
+          isHostClient: this.isHost,
+          len: this.players.length,
+        })
+      );
     } catch (e) {
       this.text2.setText(`ws connection failed ${e}`);
     }
+    ws.addListener((value) => {
+      console.log("Client Receive message", value);
+      const data = JSON.parse(value.data as any);
+      if (data.type === "join") {
+        console.log("join", data);
+        if (this.isHost) {
+          ws.send(
+            JSON.stringify({
+              type: "players",
+              players: [...this.players, data],
+            })
+          );
+        }
+      }
+      if (data.type === "players") {
+        console.log("players", data.players);
+        this.players = data.players;
+        this.text2.setText(`players: ${JSON.stringify(this.players)}`);
+      }
+    });
   }
 }

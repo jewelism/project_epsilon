@@ -3,6 +3,7 @@
   windows_subsystem = "windows"
 )]
 
+use tauri::{utils::config::AppUrl, window::WindowBuilder, WindowUrl};
 use futures_util::StreamExt;
 use tokio::net::{TcpListener, TcpStream};
 
@@ -38,6 +39,19 @@ async fn start_server() {
   ()
 }
 
+// broadcast 함수
+async fn broadcast(clients: Arc<Mutex<HashMap<Uuid, UnboundedSender<Message>>>>, message: Message) {
+  for (_, tx) in (*clients.lock().unwrap()).iter() {
+    match tx.send(message.clone()) {
+      Ok(_) => {
+          println!("server: Message sent successfully: {}", message);
+      }
+      Err(err) => {
+          eprintln!("Error sending message: {}", err);
+      }
+    }
+  }
+}
 async fn accept_connection(stream: TcpStream, clients: ClientMap) {
   let ws_stream = tokio_tungstenite::accept_async(stream)
     .await
@@ -57,9 +71,8 @@ async fn accept_connection(stream: TcpStream, clients: ClientMap) {
     while let Some(message) = read.next().await {
       match message {
         Ok(msg) => {
-          if let Err(err) = tx.send(msg) {
-            eprintln!("Error sending message: {}", err);
-          }
+          println!("server: Received a message: {}", msg);
+          broadcast(clients.clone(), msg).await;
         }
         Err(err) => {
           eprintln!("Error reading message: {}", err);
@@ -74,6 +87,13 @@ async fn accept_connection(stream: TcpStream, clients: ClientMap) {
 }
 
 fn main() {
+  let port = portpicker::pick_unused_port().expect("failed to find unused port");
+  let mut context = tauri::generate_context!();
+  let url = format!("http://localhost:{}", port).parse().unwrap();
+  let window_url = WindowUrl::External(url);
+  // rewrite the config so the IPC is enabled on this URL
+  context.config_mut().build.dist_dir = AppUrl::Url(window_url.clone());
+
   tauri::Builder::default()
     .setup(|app| {
       tauri::WindowBuilder::new(
@@ -86,10 +106,21 @@ fn main() {
         "local",
         tauri::WindowUrl::App("index.html".into())
       ).build()?;
+      WindowBuilder::new(
+        app,
+        "main".to_string(),
+        if cfg!(dev) {
+          Default::default()
+        } else {
+          window_url
+        }
+      );
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![serving])  
     .plugin(tauri_plugin_websocket::init())
-    .run(tauri::generate_context!())
+    .plugin(tauri_plugin_localhost::Builder::new(port).build())
+    // .run(tauri::generate_context!())
+    .run(context)
     .expect("error while running tauri application");
 }
