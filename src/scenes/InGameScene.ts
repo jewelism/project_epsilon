@@ -1,4 +1,5 @@
 import { Player } from "@/objects/Player";
+import { TitleText } from "@/ui/TitleText";
 import { makesafeZone } from "@/utils/helper";
 import WebSocket from "tauri-plugin-websocket-api";
 
@@ -18,8 +19,11 @@ export class InGameScene extends Phaser.Scene {
   map: Phaser.Tilemaps.Tilemap;
   isMultiplay: boolean;
   playersInfo: { id: string | number }[];
+  debugText: any;
 
   async create() {
+    this.debugText = new TitleText(this, "-");
+
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
@@ -55,32 +59,15 @@ export class InGameScene extends Phaser.Scene {
   _updateResponse(value) {
     const data = JSON.parse(value?.data ?? "{}");
     console.log("returnValue", value, data);
-    // if (data.type === "join") {
-    //   const newPlayer = new Player(this, {
-    //     x: this.playerSpawnPoints.x,
-    //     y: this.playerSpawnPoints.y,
-    //     spriteKey: "pixel_animals",
-    //     frameNo: 0,
-    //     nick: data.nick,
-    //     wsId: data.id,
-    //   });
-    //   if (data.id === this.ws.id) {
-    //     this.player = newPlayer;
-    //     this.onMyPlayerCreated();
-    //   }
-    //   this.players.push(newPlayer);
-    // }
     if (data.type === "move") {
-      console.log("move", data, this.players);
       const player = this.players.find(({ wsId }) => wsId === data.id);
-      console.log("player", player, this.players);
-
+      if (!player || player.wsId === this.ws.id) {
+        return;
+      }
       player.moveToXY(data.x, data.y);
     }
   }
   createPlayers() {
-    console.log("createPlayers", this.playersInfo);
-
     this.playersInfo.forEach((player) => {
       const newPlayer = new Player(this, {
         x: this.playerSpawnPoints.x,
@@ -100,6 +87,7 @@ export class InGameScene extends Phaser.Scene {
   async createSocketConnection() {
     // TODO: path localStorage로 변경하기
     try {
+      this.debugText.setText(`${this.ws.id}`);
       this.ws.addListener(this._updateResponse.bind(this));
     } catch (e) {
       console.error("jew ws connection failed");

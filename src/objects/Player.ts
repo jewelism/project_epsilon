@@ -51,13 +51,16 @@ export class Player {
       if (this.disabled.value) {
         return;
       }
-      this.moveToXY(pointer.worldX, pointer.worldY);
-      (scene as InGameScene).ws.send(
+      const ws = (scene as InGameScene).ws;
+      if (this.wsId === ws.id) {
+        this.moveToXY(pointer.worldX, pointer.worldY);
+      }
+      ws.send(
         JSON.stringify({
           id: this.wsId,
           type: "move",
-          x: pointer.worldX.toFixed(1),
-          y: pointer.worldY.toFixed(1),
+          x: pointer.worldX.toFixed(0),
+          y: pointer.worldY.toFixed(0),
         })
       );
     });
