@@ -41,7 +41,8 @@ async fn start_server() {
 
 // broadcast 함수
 async fn broadcast(clients: Arc<Mutex<HashMap<Uuid, UnboundedSender<Message>>>>, message: Message) {
-  for (_, tx) in (*clients.lock().unwrap()).iter() {
+  for (id, tx) in (*clients.lock().unwrap()).iter() {
+    println!("Broadcasting message to client ID: {}", id);
     match tx.send(message.clone()) {
       Ok(_) => {
           println!("server: Message sent successfully: {}", message);
@@ -53,36 +54,41 @@ async fn broadcast(clients: Arc<Mutex<HashMap<Uuid, UnboundedSender<Message>>>>,
   }
 }
 async fn accept_connection(stream: TcpStream, clients: ClientMap) {
-  let ws_stream = tokio_tungstenite::accept_async(stream)
-    .await
-    .expect("Error during the websocket handshake occurred");
-  
-  let (tx, _rx): (UnboundedSender<Message>, UnboundedReceiver<Message>) = unbounded_channel();
+  let ws_stream_result = tokio_tungstenite::accept_async(stream).await;
 
-  let id = Uuid::new_v4(); // 클라이언트를 식별하는 데 사용되는 고유한 ID 생성
-  clients.lock().unwrap().insert(id, tx.clone()); // 클라이언트를 저장
-  for (id, _) in clients.lock().unwrap().iter() {
-    println!("Client ID: {}", id);
-  }
+  match ws_stream_result {
+    Ok(ws_stream) => {
+      let (tx, _rx): (UnboundedSender<Message>, UnboundedReceiver<Message>) = unbounded_channel();
 
-  let (_write, mut read) = ws_stream.split();
-
-  let read_handle = tokio::spawn(async move {
-    while let Some(message) = read.next().await {
-      match message {
-        Ok(msg) => {
-          println!("server: Received a message: {}", msg);
-          broadcast(clients.clone(), msg).await;
+      let id = Uuid::new_v4(); // 클라이언트를 식별하는 데 사용되는 고유한 ID 생성
+      clients.lock().unwrap().insert(id, tx.clone()); // 클라이언트를 저장
+      for (id, _) in clients.lock().unwrap().iter() {
+        println!("Client ID: {}", id);
+      }
+    
+      let (_write, mut read) = ws_stream.split();
+    
+      let read_handle = tokio::spawn(async move {
+        while let Some(message) = read.next().await {
+          match message {
+            Ok(msg) => {
+              println!("server: Received a message: {}", msg);
+              broadcast(clients.clone(), msg).await;
+            }
+            Err(err) => {
+              eprintln!("Error reading message: {}", err);
+            }
+          }
         }
-        Err(err) => {
-          eprintln!("Error reading message: {}", err);
-        }
+      });
+    
+      if let Err(e) = read_handle.await {
+        eprintln!("Error: {}", e);
       }
     }
-  });
-
-  if let Err(e) = read_handle.await {
-    eprintln!("Error: {}", e);
+    Err(err) => {
+      eprintln!("Error accepting WebSocket connection: {}", err);
+    }
   }
 }
 

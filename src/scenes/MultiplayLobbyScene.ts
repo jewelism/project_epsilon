@@ -68,10 +68,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   async getSocketConnection() {
     let ws;
     try {
-      ws = await WebSocket.connect("ws://localhost:20058").then((r) => {
-        console.log("connected", r);
-        return r;
-      });
+      ws = await WebSocket.connect("ws://localhost:20058");
       console.log("host", this.isHost, ws.id);
 
       if (!this.isHost) {
