@@ -9,9 +9,14 @@ export class Player {
   disabled = signal(false);
   oldPosition: undefined | { x: number; y: number };
   wsId: number;
+  isMyPlayer: boolean;
 
-  constructor(scene: Phaser.Scene, { x, y, spriteKey, frameNo, nick, wsId }) {
+  constructor(
+    scene: Phaser.Scene,
+    { x, y, spriteKey, frameNo, nick, wsId, isMyPlayer }
+  ) {
     this.wsId = wsId;
+    this.isMyPlayer = isMyPlayer;
     this.body = new Animal(scene, { x, y, spriteKey, frameNo })
       .setDepth(9)
       .add(
@@ -51,11 +56,10 @@ export class Player {
       if (this.disabled.value) {
         return;
       }
-      const ws = (scene as InGameScene).ws;
-      if (this.wsId === ws.id) {
+      if (this.isMyPlayer) {
         this.moveToXY(pointer.worldX, pointer.worldY);
       }
-      ws.send(
+      (scene as InGameScene).ws.send(
         JSON.stringify({
           id: this.wsId,
           type: "move",
@@ -104,10 +108,18 @@ export class Player {
     this.body.sprite.setTint(0xff0000);
 
     scene.tweens.add({
-      targets: this.body,
+      targets: this.body.sprite,
       angle: 360,
       duration: 1000,
       repeat: -1,
     });
+    (scene as InGameScene).ws.send(
+      JSON.stringify({
+        id: this.wsId,
+        type: "dead",
+        x: this.body.x.toFixed(0),
+        y: this.body.y.toFixed(0),
+      })
+    );
   }
 }

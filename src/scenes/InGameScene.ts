@@ -58,17 +58,21 @@ export class InGameScene extends Phaser.Scene {
   }
   _updateResponse(value) {
     const data = JSON.parse(value?.data ?? "{}");
+    const player = this.players.find(({ wsId }) => wsId === data.id);
+    if (!player || player.wsId === this.ws.id) {
+      return;
+    }
     console.log("returnValue", value, data);
     if (data.type === "move") {
-      const player = this.players.find(({ wsId }) => wsId === data.id);
-      if (!player || player.wsId === this.ws.id) {
-        return;
-      }
       player.moveToXY(data.x, data.y);
+    }
+    if (data.type === "dead") {
+      player.playerDead(this);
     }
   }
   createPlayers() {
     this.playersInfo.forEach((player) => {
+      const isMyPlayer = player.id === this.ws.id;
       const newPlayer = new Player(this, {
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
@@ -76,12 +80,21 @@ export class InGameScene extends Phaser.Scene {
         frameNo: 0,
         nick: String(player.id),
         wsId: player.id,
+        isMyPlayer,
       });
-      if (player.id === this.ws.id) {
+      if (isMyPlayer) {
         this.player = newPlayer;
         this.onMyPlayerCreated();
       }
       this.players.push(newPlayer);
+    });
+    const playersGroup = this.add.group(
+      this.players.map((player) => player.body)
+    );
+    this.physics.add.overlap(this.player.body, playersGroup, (player: any) => {
+      console.log("player", player, player.disabled?.value);
+
+      player.disabled.value = false;
     });
   }
   async createSocketConnection() {
