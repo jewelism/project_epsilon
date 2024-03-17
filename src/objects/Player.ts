@@ -51,8 +51,6 @@ export class Player extends Phaser.GameObjects.Container {
         .setOrigin(0.5, 1.5)
         .setAlpha(0.75)
     );
-
-    this.mouseClickMove(scene);
   }
   preUpdate() {
     this.stopWhenMouseTarget();
@@ -74,25 +72,6 @@ export class Player extends Phaser.GameObjects.Container {
     }
     this.sprite.setFlipX(false);
   }
-  mouseClickMove(scene: Phaser.Scene) {
-    if (!this.isMyPlayer) {
-      return;
-    }
-    scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.mouseClickEffect(scene, pointer);
-      if (this.disabled) {
-        return;
-      }
-      (scene as InGameScene).ws.send(
-        JSON.stringify({
-          id: this.wsId,
-          type: "move",
-          x: pointer.worldX.toFixed(0),
-          y: pointer.worldY.toFixed(0),
-        })
-      );
-    });
-  }
   stopWhenMouseTarget() {
     if (!this.targetToMove) {
       return;
@@ -111,18 +90,6 @@ export class Player extends Phaser.GameObjects.Container {
     }
     this.targetToMove = null;
     this.stopMove();
-  }
-  mouseClickEffect(scene: Phaser.Scene, pointer: Phaser.Input.Pointer) {
-    let circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
-    scene.tweens.add({
-      targets: circle,
-      scaleX: 0.1,
-      scaleY: 0.1,
-      alpha: 0,
-      duration: 750,
-      ease: "Power2",
-      onComplete: () => circle.destroy(),
-    });
   }
   stopMove() {
     (this.body as any).setVelocity(0, 0);

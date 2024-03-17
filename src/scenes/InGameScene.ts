@@ -19,11 +19,8 @@ export class InGameScene extends Phaser.Scene {
   map: Phaser.Tilemaps.Tilemap;
   isMultiplay: boolean;
   playersInfo: { id: string | number }[];
-  debugText: any;
 
   async create() {
-    this.debugText = new TitleText(this, "-");
-
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
@@ -62,7 +59,41 @@ export class InGameScene extends Phaser.Scene {
       .setZoom(GAME.ZOOM);
 
     this.physics.add.overlap(this.obstacles, this.player, (player: any) => {
-      player.disabled.value = true;
+      player.disabled = true;
+      this.ws.send(
+        JSON.stringify({
+          id: this.player.wsId,
+          type: "dead",
+          x: this.player.x.toFixed(0),
+          y: this.player.y.toFixed(0),
+        })
+      );
+    });
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      this.mouseClickEffect(this, pointer);
+      if (this.player.disabled) {
+        return;
+      }
+      this.ws.send(
+        JSON.stringify({
+          id: this.player.wsId,
+          type: "move",
+          x: pointer.worldX.toFixed(0),
+          y: pointer.worldY.toFixed(0),
+        })
+      );
+    });
+  }
+  mouseClickEffect(scene: Phaser.Scene, pointer: Phaser.Input.Pointer) {
+    let circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
+    scene.tweens.add({
+      targets: circle,
+      scaleX: 0.1,
+      scaleY: 0.1,
+      alpha: 0,
+      duration: 750,
+      ease: "Power2",
+      onComplete: () => circle.destroy(),
     });
   }
   _updateResponse(value) {
@@ -119,7 +150,6 @@ export class InGameScene extends Phaser.Scene {
   async createSocketConnection() {
     // TODO: path localStorage로 변경하기
     try {
-      this.debugText.setText(`${this.ws.id}`);
       this.ws.addListener(this._updateResponse.bind(this));
     } catch (e) {
       console.error("jew ws connection failed");
