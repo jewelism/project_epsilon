@@ -40,7 +40,20 @@ export class InGameScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
-    this.player.disabled.value = !this.isPlayerInsafeZone();
+    if (!this.isPlayerInSafeZone()) {
+      if (this.player.disabled) {
+        return;
+      }
+      this.player.disabled = true;
+      this.ws.send(
+        JSON.stringify({
+          id: this.player.wsId,
+          type: "dead",
+          x: this.player.x.toFixed(0),
+          y: this.player.y.toFixed(0),
+        })
+      );
+    }
   }
   onMyPlayerCreated() {
     this.cameras.main
@@ -48,26 +61,25 @@ export class InGameScene extends Phaser.Scene {
       .startFollow(this.player.body, false)
       .setZoom(GAME.ZOOM);
 
-    this.physics.add.overlap(
-      this.obstacles,
-      this.player.body,
-      (player: any) => {
-        player.disabled.value = true;
-      }
-    );
+    this.physics.add.overlap(this.obstacles, this.player, (player: any) => {
+      player.disabled.value = true;
+    });
   }
   _updateResponse(value) {
     const data = JSON.parse(value?.data ?? "{}");
     const player = this.players.find(({ wsId }) => wsId === data.id);
-    if (!player || player.wsId === this.ws.id) {
-      return;
-    }
-    console.log("returnValue", value, data);
+    // if (!player || player.wsId === this.ws.id) {
+    //   return;
+    // }
+    console.log("receive", data);
     if (data.type === "move") {
       player.moveToXY(data.x, data.y);
     }
     if (data.type === "dead") {
-      player.playerDead(this);
+      player.playerDead(Number(data.x), Number(data.y));
+    }
+    if (data.type === "resurrection") {
+      player.playerResurrection(Number(data.x), Number(data.y));
     }
   }
   createPlayers() {
@@ -88,13 +100,20 @@ export class InGameScene extends Phaser.Scene {
       }
       this.players.push(newPlayer);
     });
-    const playersGroup = this.add.group(
-      this.players.map((player) => player.body)
-    );
-    this.physics.add.overlap(this.player.body, playersGroup, (player: any) => {
-      console.log("player", player, player.disabled?.value);
-
-      player.disabled.value = false;
+    const playersGroup = this.add.group(this.players.map((player) => player));
+    this.physics.add.overlap(this.player, playersGroup, (player1) => {
+      const player = player1 as Player;
+      if (!player.disabled) {
+        return;
+      }
+      this.ws.send(
+        JSON.stringify({
+          id: player.wsId,
+          type: "resurrection",
+          x: this.playerSpawnPoints.x,
+          y: this.playerSpawnPoints.y,
+        })
+      );
     });
   }
   async createSocketConnection() {
@@ -106,11 +125,11 @@ export class InGameScene extends Phaser.Scene {
       console.error("jew ws connection failed");
     }
   }
-  isPlayerInsafeZone() {
+  isPlayerInSafeZone() {
     const isSafe = this.safeZone.some((safeZone) =>
       Phaser.Geom.Rectangle.ContainsPoint(
         safeZone,
-        new Phaser.Geom.Point(this.player.body.x, this.player.body.y)
+        new Phaser.Geom.Point(this.player.x, this.player.y)
       )
     );
     return isSafe;
