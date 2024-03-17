@@ -38,18 +38,24 @@ async fn start_server() {
   }
   ()
 }
-
-// broadcast 함수
 async fn broadcast(clients: Arc<Mutex<HashMap<Uuid, UnboundedSender<Message>>>>, message: Message) {
-  for (id, tx) in (*clients.lock().unwrap()).iter() {
-    println!("Broadcasting message to client ID: {}", id);
-    match tx.send(message.clone()) {
-      Ok(_) => {
-          println!("server: Message sent successfully: {}", message);
+  let clients_guard = clients.lock();
+  match clients_guard {
+    Ok(clients) => {
+      for (id, tx) in clients.iter() {
+        println!("Broadcasting message to client ID: {}", id);
+        match tx.send(message.clone()) {
+          Ok(_) => {
+            println!("server: Message sent successfully: {}", message);
+          }
+          Err(err) => {
+            eprintln!("Error sending message: {}", err);
+          }
+        }
       }
-      Err(err) => {
-          eprintln!("Error sending message: {}", err);
-      }
+    },
+    Err(e) => {
+      eprintln!("Failed to lock clients: {}", e);
     }
   }
 }
