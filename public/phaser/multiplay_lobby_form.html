@@ -1,7 +1,20 @@
 <input
   type="text"
+  name="ipAddrInput"
+  placeholder="enter ip address"
+  maxlength="30"
+  onfocus="if(this.value=='localhost') this.value='';"
+  style="width: 300px; height: 30px; font-size: 20px; background-color: #fff"
+/>
+<button id="tplink">jewelry.tplink</button>
+<button id="localhost">localhost</button>
+<button id="connect">connect</button>
+<input
+  type="text"
   name="nick"
   placeholder="enter nickname"
   maxlength="10"
   style="width: 216px; height: 30px; font-size: 20px; background-color: #fff"
 />
+<button id="start">start</button>
+<p id="status" style="background-color: #fff"></p>

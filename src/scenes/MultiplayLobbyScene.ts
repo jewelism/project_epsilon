@@ -8,7 +8,8 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   ws: WebSocket;
   isHost: boolean;
   players: any[] = [];
-  playerInfoText: Phaser.GameObjects.Text;
+  ipAddrInput: string = "";
+  playerInfoText: HTMLInputElement;
 
   constructor() {
     super("MultiplayLobbyScene");
@@ -27,48 +28,36 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     const element = this.add
       .dom(title.x, title.y + 100)
       .createFromCache("multiplay_lobby_form");
-    element.on("change", (e) => {
-      console.log("change", e.target.value);
+    const ipAddrInputelement = element.getChildByName(
+      "ipAddrInput"
+    ) as HTMLInputElement;
+    ipAddrInputelement.value = "localhost";
+    this.ipAddrInput = "localhost";
+    ipAddrInputelement.addEventListener("change", (e) => {
+      this.ipAddrInput = (e.target as HTMLInputElement).value;
     });
-    if (this.isHost) {
-      const text = new Phaser.GameObjects.Text(
-        this,
-        title.x,
-        title.y + 200,
-        "start",
-        {
-          ...defaultTextStyle,
-          color: "#fff",
-          fontSize: "20px",
-        }
-      )
-        .setOrigin(0.5)
-        .setInteractive()
-        .on("pointerdown", () => {
-          this.ws.send(JSON.stringify({ type: "start" }));
-          this.startGame();
-        });
-      this.add.existing(text);
+    element.getChildByID("tplink").addEventListener("click", () => {
+      const ip = "jewelry.tplinkdns.com";
+      ipAddrInputelement.value = ip;
+      this.ipAddrInput = ip;
+    });
+    element.getChildByID("localhost").addEventListener("click", () => {
+      const ip = "localhost";
+      ipAddrInputelement.value = ip;
+      this.ipAddrInput = ip;
+    });
+    element.getChildByID("connect").addEventListener("click", () => {
+      this.getSocketConnection();
+    });
+    const startButton = element.getChildByID("start");
+    startButton.addEventListener("click", () => {
+      this.ws.send(JSON.stringify({ type: "start" }));
+      this.startGame();
+    });
+    if (!this.isHost) {
+      startButton.remove();
     }
-
-    this.playerInfoText = new Phaser.GameObjects.Text(
-      this,
-      title.x,
-      title.y + 300,
-      "-",
-      {
-        ...defaultTextStyle,
-        color: "#fff",
-        fontSize: "15px",
-      }
-    ).setOrigin(0.5);
-    this.add.existing(this.playerInfoText);
-    const onKeydown = () => {
-      // this.scene.start('SelectLevelScene');
-    };
-    this.input.keyboard.on("keydown", onKeydown);
-    this.input.on("pointerdown", onKeydown);
-    await this.getSocketConnection();
+    this.playerInfoText = element.getChildByID("status") as HTMLInputElement;
   }
   startGame() {
     this.scene.start("InGameScene", {
@@ -79,10 +68,10 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   }
   async getSocketConnection() {
     try {
-      this.ws = await WebSocket.connect("ws://localhost:20058");
-      this.playerInfoText.setText(`waiting for players`);
+      this.ws = await WebSocket.connect(`ws://${this.ipAddrInput}:20058`);
+      this.playerInfoText.innerText = `waiting for players`;
     } catch (e) {
-      this.playerInfoText.setText(`ws connection failed ${e}`);
+      this.playerInfoText.innerText = `ws connection failed ${e}`;
     }
     if (this.isHost) {
       this.players = [{ id: this.ws.id }];
@@ -119,9 +108,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
       if (data.type === "players") {
         this.players = data.players;
       }
-      this.playerInfoText.setText(
-        `${this.players.length} players: ${JSON.stringify(this.players)}`
-      );
+      this.playerInfoText.innerText = `${
+        this.players.length
+      } players: ${JSON.stringify(this.players)}`;
     });
   }
 }
