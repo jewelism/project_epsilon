@@ -13,11 +13,13 @@ export class InGameScene extends Phaser.Scene {
   safeZone: Phaser.Geom.Rectangle[];
   socket: any;
   ws: WebSocket;
-  players: Player[];
+  players: Player[] = [];
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   map: Phaser.Tilemaps.Tilemap;
+  isMultiplay: boolean;
+  playersInfo: { id: string | number }[];
 
-  create() {
+  async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
@@ -26,8 +28,8 @@ export class InGameScene extends Phaser.Scene {
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
     this.safeZone = makesafeZone(this, safeZonePoints);
-    this.createSocketConnection();
-
+    await this.createSocketConnection();
+    this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
   }
   update(_time: number, _delta: number): void {
@@ -53,40 +55,52 @@ export class InGameScene extends Phaser.Scene {
   _updateResponse(value) {
     const data = JSON.parse(value?.data ?? "{}");
     console.log("returnValue", value, data);
-    if (data.type === "join") {
+    // if (data.type === "join") {
+    //   const newPlayer = new Player(this, {
+    //     x: this.playerSpawnPoints.x,
+    //     y: this.playerSpawnPoints.y,
+    //     spriteKey: "pixel_animals",
+    //     frameNo: 0,
+    //     nick: data.nick,
+    //     wsId: data.id,
+    //   });
+    //   if (data.id === this.ws.id) {
+    //     this.player = newPlayer;
+    //     this.onMyPlayerCreated();
+    //   }
+    //   this.players.push(newPlayer);
+    // }
+    if (data.type === "move") {
+      console.log("move", data, this.players);
+      const player = this.players.find(({ wsId }) => wsId === data.id);
+      console.log("player", player, this.players);
+
+      player.moveToXY(data.x, data.y);
+    }
+  }
+  createPlayers() {
+    console.log("createPlayers", this.playersInfo);
+
+    this.playersInfo.forEach((player) => {
       const newPlayer = new Player(this, {
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
         spriteKey: "pixel_animals",
         frameNo: 0,
-        nick: data.nick,
-        wsId: data.id,
+        nick: String(player.id),
+        wsId: player.id,
       });
-      if (data.id === this.ws.id) {
+      if (player.id === this.ws.id) {
         this.player = newPlayer;
         this.onMyPlayerCreated();
       }
       this.players.push(newPlayer);
-    }
-    if (data.type === "move") {
-      const player = this.players.find(({ wsId }) => wsId === data.id);
-      player.moveToXY(data.x, data.y);
-    }
+    });
   }
   async createSocketConnection() {
     // TODO: path localStorage로 변경하기
-
     try {
-      this.ws = await WebSocket.connect("ws://127.0.0.1:20058");
-      this.ws.send(
-        JSON.stringify({
-          type: "join",
-          nick: `jew${Phaser.Math.Between(0, 999)}`,
-          id: this.ws.id,
-        })
-      );
-
-      this.ws.addListener(this._updateResponse);
+      this.ws.addListener(this._updateResponse.bind(this));
     } catch (e) {
       console.error("jew ws connection failed");
     }
@@ -137,5 +151,14 @@ export class InGameScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
+  }
+  init(data: {
+    multi: boolean;
+    players: { id: string | number }[];
+    ws: WebSocket;
+  }) {
+    this.playersInfo = data.players;
+    this.isMultiplay = data.multi;
+    this.ws = data.ws;
   }
 }

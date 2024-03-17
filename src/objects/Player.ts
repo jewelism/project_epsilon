@@ -54,7 +54,7 @@ export class Player {
       this.moveToXY(pointer.worldX, pointer.worldY);
       (scene as InGameScene).ws.send(
         JSON.stringify({
-          id: (scene as InGameScene).ws.id,
+          id: this.wsId,
           type: "move",
           x: pointer.worldX.toFixed(1),
           y: pointer.worldY.toFixed(1),
