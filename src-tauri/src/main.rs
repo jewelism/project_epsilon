@@ -2,6 +2,7 @@
   all(not(debug_assertions), target_os = "windows"),
   windows_subsystem = "windows"
 )]
+use tauri::Manager;
 
 #[tauri::command]
 fn serving(name: &str) -> String {
@@ -14,14 +15,19 @@ fn main() {
     .setup(|app| {
       tauri::WindowBuilder::new(
         app,
-        "local2", /* the unique window label */
+        "local", /* the unique window label */
         tauri::WindowUrl::App("index.html".into())
       ).build()?;
-      tauri::WindowBuilder::new(
-        app,
-        "local",
-        tauri::WindowUrl::App("index.html".into())
-      ).build()?;
+      // tauri::WindowBuilder::new(
+      //   app,
+      //   "local2",
+      //   tauri::WindowUrl::App("index.html".into())
+      // ).build()?;
+        let window = app.get_window("main").unwrap();
+        let window2 = app.get_window("local").unwrap();
+        window.open_devtools();
+        window2.open_devtools();
+        // window.close_devtools();
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![serving])  
