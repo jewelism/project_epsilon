@@ -18,7 +18,7 @@ export class InGameScene extends Phaser.Scene {
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   map: Phaser.Tilemaps.Tilemap;
   isMultiplay: boolean;
-  playersInfo: { id: string | number }[];
+  playersInfo: { wsId: string | number }[];
 
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -44,7 +44,7 @@ export class InGameScene extends Phaser.Scene {
       this.player.disabled = true;
       this.ws.send(
         JSON.stringify({
-          id: this.player.wsId,
+          wsId: this.player.wsId,
           type: "dead",
           x: this.player.x.toFixed(0),
           y: this.player.y.toFixed(0),
@@ -62,7 +62,7 @@ export class InGameScene extends Phaser.Scene {
       player.disabled = true;
       this.ws.send(
         JSON.stringify({
-          id: this.player.wsId,
+          wsId: this.player.wsId,
           type: "dead",
           x: this.player.x.toFixed(0),
           y: this.player.y.toFixed(0),
@@ -76,7 +76,7 @@ export class InGameScene extends Phaser.Scene {
       }
       this.ws.send(
         JSON.stringify({
-          id: this.player.wsId,
+          wsId: this.player.wsId,
           type: "move",
           x: pointer.worldX.toFixed(0),
           y: pointer.worldY.toFixed(0),
@@ -115,14 +115,14 @@ export class InGameScene extends Phaser.Scene {
   }
   createPlayers() {
     this.playersInfo.forEach((player) => {
-      const isMyPlayer = player.id === this.ws.id;
+      const isMyPlayer = player.wsId === this.ws.id;
       const newPlayer = new Player(this, {
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
         spriteKey: "pixel_animals",
         frameNo: 0,
-        nick: String(player.id),
-        wsId: player.id,
+        nick: String(player.wsId),
+        wsId: player.wsId,
         isMyPlayer,
       });
       if (isMyPlayer) {
@@ -139,7 +139,7 @@ export class InGameScene extends Phaser.Scene {
       }
       this.ws.send(
         JSON.stringify({
-          id: player.wsId,
+          wsId: player.wsId,
           type: "resurrection",
           x: this.playerSpawnPoints.x,
           y: this.playerSpawnPoints.y,
@@ -204,7 +204,7 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data: {
     multi: boolean;
-    players: { id: string | number }[];
+    players: { wsId: string | number }[];
     ws: WebSocket;
   }) {
     this.playersInfo = data.players;
