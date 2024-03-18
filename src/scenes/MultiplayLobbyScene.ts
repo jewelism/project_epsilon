@@ -44,7 +44,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     this.elements.roomsContainer = element.getChildByID("rooms") as HTMLElement;
 
     element.getChildByID("connect").addEventListener("click", () => {
-      this.getSocketConnection();
+      this.getSocketConnection(element);
     });
     const startButton = element.getChildByID("start");
     startButton.addEventListener("click", () => {
@@ -66,13 +66,16 @@ export class MultiplayLobbyScene extends Phaser.Scene {
       ws: this.ws,
     });
   }
-  async getSocketConnection() {
+  async getSocketConnection(element: Phaser.GameObjects.DOMElement) {
     try {
       this.elements.playerInfoText.innerText = `try to connect...`;
       this.ws = await WebSocket.connect(
         `ws://${this.inputFields.ipAddrInput}:20058`
       );
-      this.elements.playerInfoText.innerText = `waiting for players`;
+      element.getChildByID("first_connection").remove();
+      this.elements.playerInfoText.innerText = this.isHost
+        ? "waiting for players"
+        : "select room";
     } catch (e) {
       this.elements.playerInfoText.innerText = `ws connection failed ${e}`;
     }
