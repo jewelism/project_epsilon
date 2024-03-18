@@ -3,12 +3,22 @@
   name="ipAddrInput"
   placeholder="enter ip address"
   maxlength="30"
-  onfocus="if(this.value=='localhost') this.value='';"
+  onfocus="this.value='';"
   style="width: 300px; height: 30px; font-size: 20px; background-color: #fff"
 />
 <button id="tplink">jewelry.tplink</button>
 <button id="localhost">localhost</button>
+<br />
+<input
+  type="text"
+  name="roomNameInput"
+  placeholder="enter room name"
+  maxlength="30"
+  onfocus="this.value='';"
+  style="width: 300px; height: 30px; font-size: 20px; background-color: #fff"
+/>
 <button id="connect">connect</button>
+<br />
 <input
   type="text"
   name="nick"
@@ -16,5 +26,5 @@
   maxlength="10"
   style="width: 216px; height: 30px; font-size: 20px; background-color: #fff"
 />
-<button id="start">start</button>
+<button id="start">start</button><br />
 <p id="status" style="background-color: #fff"></p>
