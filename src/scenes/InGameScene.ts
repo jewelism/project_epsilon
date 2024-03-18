@@ -18,7 +18,8 @@ export class InGameScene extends Phaser.Scene {
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   map: Phaser.Tilemaps.Tilemap;
   isMultiplay: boolean;
-  playersInfo: { wsId: string | number }[];
+  playersInfo: { uuid: string }[];
+  uuid: string;
 
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -44,7 +45,7 @@ export class InGameScene extends Phaser.Scene {
       this.player.disabled = true;
       this.ws.send(
         JSON.stringify({
-          wsId: this.player.wsId,
+          uuid: this.player.uuid,
           type: "dead",
           x: this.player.x.toFixed(0),
           y: this.player.y.toFixed(0),
@@ -62,7 +63,7 @@ export class InGameScene extends Phaser.Scene {
       player.disabled = true;
       this.ws.send(
         JSON.stringify({
-          wsId: this.player.wsId,
+          uuid: this.player.uuid,
           type: "dead",
           x: this.player.x.toFixed(0),
           y: this.player.y.toFixed(0),
@@ -76,7 +77,7 @@ export class InGameScene extends Phaser.Scene {
       }
       this.ws.send(
         JSON.stringify({
-          wsId: this.player.wsId,
+          uuid: this.player.uuid,
           type: "move",
           x: pointer.worldX.toFixed(0),
           y: pointer.worldY.toFixed(0),
@@ -97,12 +98,18 @@ export class InGameScene extends Phaser.Scene {
     });
   }
   _updateResponse(value) {
-    const data = JSON.parse(value?.data ?? "{}");
-    const player = this.players.find(({ wsId }) => wsId === data.id);
-    // if (!player || player.wsId === this.ws.id) {
-    //   return;
-    // }
-    console.log("receive", data);
+    let data;
+    try {
+      if (value?.type === "Ping") {
+        return;
+      }
+      data = JSON.parse(value?.data ?? "{}");
+    } catch (e) {
+      console.error("failed to parse json", typeof value, value);
+      data = {};
+      return;
+    }
+    const player = this.players.find(({ uuid }) => uuid === data.uuid);
     if (data.type === "move") {
       player.moveToXY(data.x, data.y);
     }
@@ -115,14 +122,14 @@ export class InGameScene extends Phaser.Scene {
   }
   createPlayers() {
     this.playersInfo.forEach((player) => {
-      const isMyPlayer = player.wsId === this.ws.id;
+      const isMyPlayer = player.uuid === this.uuid;
       const newPlayer = new Player(this, {
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
         spriteKey: "pixel_animals",
         frameNo: 0,
-        nick: String(player.wsId),
-        wsId: player.wsId,
+        nick: String(player.uuid),
+        uuid: player.uuid,
         isMyPlayer,
       });
       if (isMyPlayer) {
@@ -139,7 +146,7 @@ export class InGameScene extends Phaser.Scene {
       }
       this.ws.send(
         JSON.stringify({
-          wsId: player.wsId,
+          uuid: player.uuid,
           type: "resurrection",
           x: this.playerSpawnPoints.x,
           y: this.playerSpawnPoints.y,
@@ -204,11 +211,13 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data: {
     multi: boolean;
-    players: { wsId: string | number }[];
+    players: { uuid: string }[];
+    uuid: string;
     ws: WebSocket;
   }) {
     this.playersInfo = data.players;
     this.isMultiplay = data.multi;
+    this.uuid = data.uuid;
     this.ws = data.ws;
   }
 }

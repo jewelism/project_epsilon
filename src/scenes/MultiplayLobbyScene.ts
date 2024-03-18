@@ -1,10 +1,9 @@
 import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
-import { defaultTextStyle } from "@/constants";
 
 type Room = {
   type: string;
-  hostWsId: number;
+  hostUuid: string;
   roomName: string;
 };
 
@@ -17,6 +16,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
 
   inputFields: Record<string, string> = {};
   elements: Record<string, HTMLElement> = {};
+  uuid: string;
 
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -51,6 +51,10 @@ export class MultiplayLobbyScene extends Phaser.Scene {
       this.ws.send(JSON.stringify({ type: "start" }));
       this.startGame();
     });
+
+    element.getChildByID("req_total_players").addEventListener("click", () => {
+      this.ws.send(JSON.stringify({ type: "reqTotalPlayers" }));
+    });
     if (!this.isHost) {
       startButton.remove();
       roomNameInputEl.remove();
@@ -63,6 +67,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     this.scene.start("InGameScene", {
       multi: true,
       players: this.players,
+      uuid: this.uuid,
       ws: this.ws,
     });
   }
@@ -79,21 +84,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     } catch (e) {
       this.elements.playerInfoText.innerText = `ws connection failed ${e}`;
     }
-    if (this.isHost) {
-      this.players = [{ wsId: this.ws.id }];
-      const room: Room = {
-        type: "createRoom",
-        hostWsId: this.ws.id,
-        roomName: this.inputFields.roomNameInput,
-      };
-      this.ws.send(JSON.stringify(room));
-    } else {
-      this.ws.send(
-        JSON.stringify({
-          type: "reqRooms",
-        })
-      );
-    }
+
     this.ws.addListener((value) => {
       if (removedListener) {
         return;
@@ -103,21 +94,55 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         return;
       }
       const data = JSON.parse(value.data as any);
-      if (data.type === "start") {
-        this.startGame();
-        removedListener = true;
-        return;
-      }
-      if (data.type === "rooms") {
-        if (!this.isHost) {
-          this.createRoomsButton(data);
+      console.log("data", data);
+      switch (data.type) {
+        case "uuid": {
+          this.uuid = data.uuid;
+          if (this.isHost) {
+            this.players = [{ uuid: this.uuid }];
+            const room: Room = {
+              type: "createRoom",
+              hostUuid: this.uuid,
+              roomName: this.inputFields.roomNameInput,
+            };
+            this.ws.send(JSON.stringify(room));
+          } else {
+            this.ws.send(
+              JSON.stringify({
+                type: "reqRooms",
+              })
+            );
+          }
+          break;
         }
-      }
-      if (data.type === "players") {
-        this.players = data.players;
-        this.elements.playerInfoText.innerText = `${
-          this.players.length
-        } players: ${JSON.stringify(this.players)}`;
+        case "start": {
+          this.startGame();
+          removedListener = true;
+          break;
+        }
+        case "rooms": {
+          if (!this.isHost) {
+            this.createRoomsButton(data);
+          }
+          break;
+        }
+        case "players": {
+          this.players = data.players;
+          this.elements.playerInfoText.innerText = `${
+            this.players.length
+          } players: ${JSON.stringify(this.players)}`;
+          break;
+        }
+        case "totalPlayers": {
+          element.getChildByID(
+            "total_players"
+          ).innerHTML = `total players: ${data.totalPlayers}`;
+          break;
+        }
+        default: {
+          console.log("unknown type", data);
+          break;
+        }
       }
     });
   }
@@ -140,17 +165,17 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     this.elements.roomsContainer.innerHTML = Object.values(data.rooms)
       .map(
         (room: Room) =>
-          `<button id="${room.hostWsId}">${room.roomName}</button>`
+          `<button id="${room.hostUuid}">${room.roomName}</button>`
       )
       .join("");
     Array.from(this.elements.roomsContainer.children).forEach((button) => {
       button.addEventListener("click", ({ target }) => {
-        this.inputFields.seletedRoomHostWsId = (target as HTMLElement).id;
+        this.inputFields.seletedRoomhostUuid = (target as HTMLElement).id;
         this.ws.send(
           JSON.stringify({
             type: "joinRoom",
-            wsId: this.ws.id,
-            hostWsId: this.inputFields.seletedRoomHostWsId,
+            uuid: this.uuid,
+            hostUuid: this.inputFields.seletedRoomhostUuid,
           })
         );
         this.elements.roomsContainer.innerHTML = "";

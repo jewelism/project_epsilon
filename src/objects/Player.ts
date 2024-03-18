@@ -12,16 +12,16 @@ export class Player extends Phaser.GameObjects.Container {
   targetToMove: Phaser.Math.Vector2 | null = null;
   disabled = false;
   oldPosition: undefined | { x: number; y: number };
-  wsId: number;
+  uuid: string;
   isMyPlayer: boolean;
   deadTweens: Phaser.Tweens.Tween;
 
   constructor(
     scene: Phaser.Scene,
-    { x, y, spriteKey, frameNo, nick, wsId, isMyPlayer }
+    { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer }
   ) {
     super(scene, x, y);
-    this.wsId = wsId;
+    this.uuid = uuid;
     this.isMyPlayer = isMyPlayer;
     this.frameNo = frameNo;
     this.spriteKey = spriteKey;
