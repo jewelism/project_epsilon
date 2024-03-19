@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { StartScene } from "@/scenes/StartScene";
 import { MultiplayLobbyScene } from "@/scenes/MultiplayLobbyScene";
 import { InGameScene } from "@/scenes/InGameScene";
+import "normalize.css";
 
 const config: Phaser.Types.Core.GameConfig = {
   scene: [StartScene, MultiplayLobbyScene, InGameScene],
