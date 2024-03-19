@@ -48,7 +48,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     });
     const startButton = element.getChildByID("start");
     startButton.addEventListener("click", () => {
-      this.ws.send(JSON.stringify({ type: "start" }));
+      this.ws.send(
+        JSON.stringify({ type: "start", hostUuid: this.players[0].uuid })
+      );
       this.startGame();
     });
 
@@ -116,6 +118,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
           break;
         }
         case "start": {
+          if (data.hostUuid !== this.players[0].uuid) {
+            return;
+          }
           this.startGame();
           removedListener = true;
           break;
