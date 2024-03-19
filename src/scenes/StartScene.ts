@@ -3,6 +3,7 @@ import { TitleText } from "@/ui/TitleText";
 export class StartScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   nick: string;
+  ipAddrInput: string = "localhost";
 
   create() {
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -11,6 +12,20 @@ export class StartScene extends Phaser.Scene {
 
     // const icon = this.add.image(400, 300, 'icon');
     const element = this.add.dom(title.x, 400).createFromCache("main_form");
+    const ipAddrInputEl = element.getChildByName(
+      "ipAddrInput"
+    ) as HTMLInputElement;
+    ipAddrInputEl.addEventListener("change", ({ target }) => {
+      this.ipAddrInput = (target as HTMLInputElement).value;
+    });
+    element.getChildByID("tplink").addEventListener("click", () => {
+      this.ipAddrInput = "jewelry.tplinkdns.com";
+      ipAddrInputEl.value = this.ipAddrInput;
+    });
+    element.getChildByID("localhost").addEventListener("click", () => {
+      this.ipAddrInput = "localhost";
+      ipAddrInputEl.value = this.ipAddrInput;
+    });
     element.addListener("click");
     element.on("click", ({ target: { name } }) => {
       if (name === "singleplayButton") {
@@ -25,28 +40,15 @@ export class StartScene extends Phaser.Scene {
         this.scene.start("MultiplayLobbyScene", {
           host: name === "createMulti" ? true : false,
           nick: this.nick,
+          ipAddrInput: this.ipAddrInput,
         });
       }
     });
-    element.getChildByName("nick").addEventListener("change", ({ target }) => {
+    const nickEl = element.getChildByName("nick") as HTMLInputElement;
+    nickEl.addEventListener("change", ({ target }) => {
       this.nick = (target as HTMLInputElement).value;
     });
-    // const pressAnyKeyText = this.add
-    //   // .text(title.x, title.y + 500, 'press any key', {
-    //   .text(50, 50, 'press any key', {
-    //     fontSize: '20px',
-    //     color: '#fff',
-    //     align: 'center',
-    //   })
-    //   .setOrigin(0, 0);
-    // this.tweens.add({
-    //   targets: pressAnyKeyText,
-    //   alpha: 0,
-    //   duration: 600,
-    //   ease: 'Power2',
-    //   yoyo: true,
-    //   repeat: -1,
-    // });
+    nickEl.focus();
   }
   constructor() {
     super("StartScene");

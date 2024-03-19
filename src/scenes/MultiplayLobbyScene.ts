@@ -27,26 +27,13 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     const element = this.add
       .dom(title.x, title.y + 200)
       .createFromCache("multiplay_lobby_form");
-
-    const { setInputValue: setIpAddrInput } = this.manageInputElement(element, {
-      name: "ipAddrInput",
-      defaultValue: "localhost",
-    });
+    this.elements.playerInfoText = element.getChildByID(
+      "status"
+    ) as HTMLInputElement;
+    this.elements.roomsContainer = element.getChildByID("rooms") as HTMLElement;
     const { inputEl: roomNameInputEl } = this.manageInputElement(element, {
       name: "roomNameInput",
       defaultValue: "test room12",
-    });
-    element.getChildByID("tplink").addEventListener("click", () => {
-      setIpAddrInput("jewelry.tplinkdns.com");
-    });
-    element.getChildByID("localhost").addEventListener("click", () => {
-      setIpAddrInput("localhost");
-    });
-
-    this.elements.roomsContainer = element.getChildByID("rooms") as HTMLElement;
-
-    element.getChildByID("connect").addEventListener("click", () => {
-      this.getSocketConnection(element);
     });
     const startButton = element.getChildByID("start");
     startButton.addEventListener("click", () => {
@@ -55,17 +42,14 @@ export class MultiplayLobbyScene extends Phaser.Scene {
       );
       this.startGame();
     });
-
-    element.getChildByID("req_total_players").addEventListener("click", () => {
-      this.ws.send(JSON.stringify({ type: "reqTotalPlayers" }));
-    });
+    // element.getChildByID("req_total_players").addEventListener("click", () => {
+    //   this.ws.send(JSON.stringify({ type: "reqTotalPlayers" }));
+    // });
     if (!this.isHost) {
       startButton.remove();
       roomNameInputEl.remove();
     }
-    this.elements.playerInfoText = element.getChildByID(
-      "status"
-    ) as HTMLInputElement;
+    await this.getSocketConnection(element);
   }
   startGame() {
     this.scene.start("InGameScene", {
@@ -197,6 +181,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   init(data) {
     this.isHost = data.host;
     this.nick = data.nick;
+    this.inputFields.ipAddrInput = data.ipAddrInput;
   }
   preload() {
     this.load.html("multiplay_lobby_form", "phaser/multiplay_lobby_form.html");
