@@ -1,16 +1,9 @@
-import { invoke } from "@tauri-apps/api";
 import { TitleText } from "@/ui/TitleText";
 
 export class StartScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+  nick: string;
 
-  constructor() {
-    super("StartScene");
-  }
-  preload() {
-    this.load.html("main_form", "phaser/main_form.html");
-    // this.load.image('icon', 'phaser/icon.png');
-  }
   create() {
     this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -23,16 +16,20 @@ export class StartScene extends Phaser.Scene {
       if (name === "singleplayButton") {
         this.scene.start("InGameScene");
       }
-      if (name === "createMulti") {
-        invoke("serving", { name: "World" });
-        this.scene.start("MultiplayLobbyScene", { host: true });
-        // this.scene.start("InGameScene");
+      if (["createMulti", "joinMulti"].includes(name)) {
+        if (!this.nick) {
+          element.getChildByID("status").innerHTML = "input nick!!!!!!!!!!!!!";
+          (element.getChildByName("nick") as HTMLInputElement).focus();
+          return;
+        }
+        this.scene.start("MultiplayLobbyScene", {
+          host: name === "createMulti" ? true : false,
+          nick: this.nick,
+        });
       }
-      if (name === "joinMulti") {
-        // this.scene.start("MultiplayLobbyScene");
-        this.scene.start("MultiplayLobbyScene", { host: false });
-        // this.scene.start("InGameScene");
-      }
+    });
+    element.getChildByName("nick").addEventListener("change", ({ target }) => {
+      this.nick = (target as HTMLInputElement).value;
     });
     // const pressAnyKeyText = this.add
     //   // .text(title.x, title.y + 500, 'press any key', {
@@ -50,5 +47,12 @@ export class StartScene extends Phaser.Scene {
     //   yoyo: true,
     //   repeat: -1,
     // });
+  }
+  constructor() {
+    super("StartScene");
+  }
+  preload() {
+    this.load.html("main_form", "phaser/main_form.html");
+    // this.load.image('icon', 'phaser/icon.png');
   }
 }

@@ -5,6 +5,7 @@ type Room = {
   type: string;
   hostUuid: string;
   roomName: string;
+  nick: string;
 };
 
 let removedListener = false;
@@ -12,18 +13,19 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   ws: WebSocket;
   isHost: boolean;
-  players: any[] = [];
+  players: { uuid: string; nick: string }[] = [];
 
   inputFields: Record<string, string> = {};
   elements: Record<string, HTMLElement> = {};
   uuid: string;
+  nick: string;
 
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
 
     const title = new TitleText(this, "Lobby");
     const element = this.add
-      .dom(title.x, title.y + 100)
+      .dom(title.x, title.y + 200)
       .createFromCache("multiplay_lobby_form");
 
     const { setInputValue: setIpAddrInput } = this.manageInputElement(element, {
@@ -101,11 +103,12 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         case "uuid": {
           this.uuid = data.uuid;
           if (this.isHost) {
-            this.players = [{ uuid: this.uuid }];
+            this.players = [{ uuid: this.uuid, nick: this.nick }];
             const room: Room = {
               type: "createRoom",
               hostUuid: this.uuid,
               roomName: this.inputFields.roomNameInput,
+              nick: this.nick,
             };
             this.ws.send(JSON.stringify(room));
           } else {
@@ -181,6 +184,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
             type: "joinRoom",
             uuid: this.uuid,
             hostUuid: this.inputFields.seletedRoomhostUuid,
+            nick: this.nick,
           })
         );
         this.elements.roomsContainer.innerHTML = "";
@@ -192,6 +196,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   }
   init(data) {
     this.isHost = data.host;
+    this.nick = data.nick;
   }
   preload() {
     this.load.html("multiplay_lobby_form", "phaser/multiplay_lobby_form.html");

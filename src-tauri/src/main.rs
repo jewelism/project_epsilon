@@ -4,11 +4,11 @@
 )]
 use tauri::Manager;
 
-#[tauri::command]
-fn serving(name: &str) -> String {
-  // tauri::async_runtime::spawn(start_server());
-  format!("Hello, {}!", name)
-}
+// #[tauri::command]
+// fn serving(name: &str) -> String {
+//   // tauri::async_runtime::spawn(start_server());
+//   format!("Hello, {}!", name)
+// }
 
 fn main() {
   tauri::Builder::default()
@@ -29,7 +29,7 @@ fn main() {
         window2.open_devtools();
       Ok(())
     })
-    .invoke_handler(tauri::generate_handler![serving])  
+    // .invoke_handler(tauri::generate_handler![serving])  
     .plugin(tauri_plugin_websocket::init())
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

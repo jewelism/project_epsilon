@@ -18,7 +18,7 @@ export class InGameScene extends Phaser.Scene {
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   map: Phaser.Tilemaps.Tilemap;
   isMultiplay: boolean;
-  playersInfo: { uuid: string }[];
+  playersInfo: { uuid: string; nick: string }[];
   uuid: string;
 
   async create() {
@@ -128,7 +128,7 @@ export class InGameScene extends Phaser.Scene {
         y: this.playerSpawnPoints.y,
         spriteKey: "pixel_animals",
         frameNo: 0,
-        nick: String(player.uuid),
+        nick: player.nick,
         uuid: player.uuid,
         isMyPlayer,
       });
@@ -211,7 +211,7 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data: {
     multi: boolean;
-    players: { uuid: string }[];
+    players: { uuid: string; nick: string }[];
     uuid: string;
     ws: WebSocket;
   }) {
