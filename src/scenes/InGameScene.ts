@@ -33,6 +33,23 @@ export class InGameScene extends Phaser.Scene {
     await this.createSocketConnection();
     this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
+    this.time.addEvent({
+      delay: 2000,
+      callback: () => {
+        // console.log(
+        //   "dead check",
+        //   this.players.every(({ disabled }) => disabled),
+        //   this.players
+        // );
+
+        if (this.players.every(({ disabled }) => disabled)) {
+          console.log("all dead");
+
+          this.scene.restart();
+        }
+      },
+      loop: true,
+    });
   }
   update(_time: number, _delta: number): void {
     if (!this.player) {
@@ -42,7 +59,6 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
-      this.player.disabled = true;
       this.ws.send(
         JSON.stringify({
           uuid: this.player.uuid,
@@ -59,8 +75,7 @@ export class InGameScene extends Phaser.Scene {
       .startFollow(this.player.body, false)
       .setZoom(GAME.ZOOM);
 
-    this.physics.add.overlap(this.obstacles, this.player, (player: any) => {
-      player.disabled = true;
+    this.physics.add.overlap(this.obstacles, this.player, () => {
       this.ws.send(
         JSON.stringify({
           uuid: this.player.uuid,
@@ -121,6 +136,8 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   createPlayers() {
+    console.log("createPlayers", this.playersInfo);
+
     this.playersInfo.forEach((player) => {
       const isMyPlayer = player.uuid === this.uuid;
       const newPlayer = new Player(this, {
@@ -155,7 +172,6 @@ export class InGameScene extends Phaser.Scene {
     });
   }
   async createSocketConnection() {
-    // TODO: path localStorage로 변경하기
     try {
       this.ws.addListener(this._updateResponse.bind(this));
     } catch (e) {
@@ -203,6 +219,7 @@ export class InGameScene extends Phaser.Scene {
   preload() {
     this.load.tilemapTiledJSON("map", "phaser/tiled/map.json");
     this.load.image("16tiles", "phaser/tiled/16tiles.png");
+    this.load.image("ski_tiled_image", "phaser/tiled/ski.png");
 
     this.load.spritesheet("pixel_animals", "phaser/pixel_animals.png", {
       frameWidth: 16,
@@ -219,5 +236,6 @@ export class InGameScene extends Phaser.Scene {
     this.isMultiplay = data.multi;
     this.uuid = data.uuid;
     this.ws = data.ws;
+    console.log("init", data);
   }
 }
