@@ -1,6 +1,5 @@
-import { signal, effect } from "@preact/signals-core";
+import { signal } from "@preact/signals-core";
 import { defaultTextStyle } from "@/constants";
-import { InGameScene } from "@/scenes/InGameScene";
 
 export class Player extends Phaser.GameObjects.Container {
   moveSpeed = signal(80);
@@ -95,8 +94,8 @@ export class Player extends Phaser.GameObjects.Container {
     (this.body as any).setVelocity(0, 0);
   }
   playerDead(x: number, y: number) {
-    console.log("playerDead", x, y);
-
+    console.log("playerDead", this.body);
+    this.disabled = true;
     this.setPosition(x, y);
     this.stopMove();
     this.sprite.setTint(0xff0000);
@@ -111,7 +110,7 @@ export class Player extends Phaser.GameObjects.Container {
   playerResurrection(x: number, y: number) {
     this.setPosition(x, y);
     this.sprite.clearTint();
-    this.deadTweens.stop();
+    this.deadTweens?.stop();
     this.sprite.angle = 0;
     this.disabled = false;
   }

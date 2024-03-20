@@ -1,6 +1,11 @@
 import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
 
+export interface CustomWebSocket extends WebSocket {
+  uuid?: string;
+  sendJson: (data: Record<string, unknown>) => void;
+}
+
 type Room = {
   type: string;
   hostUuid: string;
@@ -11,7 +16,7 @@ type Room = {
 let removedListener = false;
 export class MultiplayLobbyScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  ws: WebSocket;
+  ws: CustomWebSocket;
   isHost: boolean;
   players: { uuid: string; nick: string }[] = [];
 
@@ -37,10 +42,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     });
     const startButton = element.getChildByID("start");
     startButton.addEventListener("click", () => {
-      this.ws.send(
-        JSON.stringify({ type: "start", hostUuid: this.players[0].uuid })
-      );
-      this.startGame();
+      this.ws.sendJson({ type: "start", hostUuid: this.uuid });
     });
     // element.getChildByID("req_total_players").addEventListener("click", () => {
     //   this.ws.send(JSON.stringify({ type: "reqTotalPlayers" }));
@@ -62,9 +64,10 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   async getSocketConnection(element: Phaser.GameObjects.DOMElement) {
     try {
       this.elements.playerInfoText.innerText = `try to connect...`;
-      this.ws = await WebSocket.connect(
+      this.ws = (await WebSocket.connect(
         `ws://${this.inputFields.ipAddrInput}:20058`
-      );
+      )) as CustomWebSocket;
+      this.ws.sendJson = (data) => this.ws.send(JSON.stringify(data));
       element.getChildByID("first_connection").remove();
       this.elements.playerInfoText.innerText = this.isHost
         ? "waiting for players"
@@ -94,20 +97,16 @@ export class MultiplayLobbyScene extends Phaser.Scene {
               roomName: this.inputFields.roomNameInput,
               nick: this.nick,
             };
-            this.ws.send(JSON.stringify(room));
+            this.ws.sendJson(room);
           } else {
-            this.ws.send(
-              JSON.stringify({
-                type: "reqRooms",
-              })
-            );
+            this.ws.sendJson({
+              type: "reqRooms",
+              uuid: this.uuid,
+            });
           }
           break;
         }
         case "start": {
-          if (data.hostUuid !== this.players[0].uuid) {
-            return;
-          }
           this.startGame();
           removedListener = true;
           break;
@@ -163,14 +162,12 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     Array.from(this.elements.roomsContainer.children).forEach((button) => {
       button.addEventListener("click", ({ target }) => {
         this.inputFields.seletedRoomhostUuid = (target as HTMLElement).id;
-        this.ws.send(
-          JSON.stringify({
-            type: "joinRoom",
-            uuid: this.uuid,
-            hostUuid: this.inputFields.seletedRoomhostUuid,
-            nick: this.nick,
-          })
-        );
+        this.ws.sendJson({
+          type: "joinRoom",
+          uuid: this.uuid,
+          hostUuid: this.inputFields.seletedRoomhostUuid,
+          nick: this.nick,
+        });
         this.elements.roomsContainer.innerHTML = "";
       });
     });

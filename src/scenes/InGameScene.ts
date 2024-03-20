@@ -1,6 +1,7 @@
 import { Player } from "@/objects/Player";
+import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
 import { TitleText } from "@/ui/TitleText";
-import { makesafeZone } from "@/utils/helper";
+import { makeSafeZone } from "@/utils/helper";
 import WebSocket from "tauri-plugin-websocket-api";
 
 // TODO: 스테이지 구성하기전에 멀티플레이 추가하고 되살리기 추가하기
@@ -13,7 +14,7 @@ export class InGameScene extends Phaser.Scene {
   obstacles: Phaser.Physics.Arcade.Group;
   safeZone: Phaser.Geom.Rectangle[];
   socket: any;
-  ws: WebSocket;
+  ws: CustomWebSocket;
   players: Player[] = [];
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   map: Phaser.Tilemaps.Tilemap;
@@ -29,10 +30,27 @@ export class InGameScene extends Phaser.Scene {
       this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
-    this.safeZone = makesafeZone(this, safeZonePoints);
+    this.safeZone = makeSafeZone(this, safeZonePoints);
     await this.createSocketConnection();
     this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
+    // this.time.addEvent({
+    //   delay: 2000,
+    //   callback: () => {
+    //     // console.log(
+    //     //   "dead check",
+    //     //   this.players.every(({ disabled }) => disabled),
+    //     //   this.players
+    //     // );
+
+    //     if (this.players.every(({ disabled }) => disabled)) {
+    //       console.log("all dead");
+
+    //       this.scene.restart();
+    //     }
+    //   },
+    //   loop: true,
+    // });
   }
   update(_time: number, _delta: number): void {
     if (!this.player) {
@@ -43,14 +61,13 @@ export class InGameScene extends Phaser.Scene {
         return;
       }
       this.player.disabled = true;
-      this.ws.send(
-        JSON.stringify({
-          uuid: this.player.uuid,
-          type: "dead",
-          x: this.player.x.toFixed(0),
-          y: this.player.y.toFixed(0),
-        })
-      );
+      this.ws.sendJson({
+        uuid: this.player.uuid,
+        hostUuid: this.playersInfo[0].uuid,
+        type: "dead",
+        x: this.player.x.toFixed(0),
+        y: this.player.y.toFixed(0),
+      });
     }
   }
   onMyPlayerCreated() {
@@ -59,30 +76,27 @@ export class InGameScene extends Phaser.Scene {
       .startFollow(this.player.body, false)
       .setZoom(GAME.ZOOM);
 
-    this.physics.add.overlap(this.obstacles, this.player, (player: any) => {
-      player.disabled = true;
-      this.ws.send(
-        JSON.stringify({
-          uuid: this.player.uuid,
-          type: "dead",
-          x: this.player.x.toFixed(0),
-          y: this.player.y.toFixed(0),
-        })
-      );
+    this.physics.add.overlap(this.obstacles, this.player, () => {
+      this.ws.sendJson({
+        hostUuid: this.playersInfo[0].uuid,
+        uuid: this.player.uuid,
+        type: "dead",
+        x: this.player.x.toFixed(0),
+        y: this.player.y.toFixed(0),
+      });
     });
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.mouseClickEffect(this, pointer);
       if (this.player.disabled) {
         return;
       }
-      this.ws.send(
-        JSON.stringify({
-          uuid: this.player.uuid,
-          type: "move",
-          x: pointer.worldX.toFixed(0),
-          y: pointer.worldY.toFixed(0),
-        })
-      );
+      this.ws.sendJson({
+        uuid: this.player.uuid,
+        hostUuid: this.playersInfo[0].uuid,
+        type: "move",
+        x: pointer.worldX.toFixed(0),
+        y: pointer.worldY.toFixed(0),
+      });
     });
   }
   mouseClickEffect(scene: Phaser.Scene, pointer: Phaser.Input.Pointer) {
@@ -121,6 +135,8 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   createPlayers() {
+    console.log("createPlayers", this.playersInfo);
+
     this.playersInfo.forEach((player) => {
       const isMyPlayer = player.uuid === this.uuid;
       const newPlayer = new Player(this, {
@@ -144,18 +160,16 @@ export class InGameScene extends Phaser.Scene {
       if (!player.disabled) {
         return;
       }
-      this.ws.send(
-        JSON.stringify({
-          uuid: player.uuid,
-          type: "resurrection",
-          x: this.playerSpawnPoints.x,
-          y: this.playerSpawnPoints.y,
-        })
-      );
+      this.ws.sendJson({
+        hostUuid: this.playersInfo[0].uuid,
+        uuid: player.uuid,
+        type: "resurrection",
+        x: this.playerSpawnPoints.x,
+        y: this.playerSpawnPoints.y,
+      });
     });
   }
   async createSocketConnection() {
-    // TODO: path localStorage로 변경하기
     try {
       this.ws.addListener(this._updateResponse.bind(this));
     } catch (e) {
@@ -175,15 +189,20 @@ export class InGameScene extends Phaser.Scene {
     const map = scene.make.tilemap({
       key: "map",
     });
-    const bgTiles = map.addTilesetImage("16tiles", "16tiles");
-    map.createLayer("bg", bgTiles);
 
-    const playerSpawnPoints = map.findObject("PlayerSpawn", ({ name }) => {
-      return name.includes("PlayerSpawn");
-    });
-    const safeZonePoints = map.filterObjects("safeZone", ({ name }) => {
-      return name.includes("safeZone");
-    });
+    // const bgTiles = map.addTilesetImage("16tiles", "16tiles");
+    const bgTiles = map.addTilesetImage("ski", "ski_tiled_image");
+    map.createLayer("bg", bgTiles);
+    map.createLayer("bg_items", bgTiles);
+
+    const playerSpawnPoints = map.findObject("PlayerSpawn", () => true);
+    const safeZonePoints = [
+      ...(map.filterObjects("safeZone", () => true) ?? []),
+      ...(map.filterObjects("safeZone_radius", () => true) ?? []),
+      ...(map.filterObjects("nonstopZone", () => true) ?? []),
+      ...(map.filterObjects("straightZone", () => true) ?? []),
+    ];
+
     const obstacleSpawnPoints = map.filterObjects(
       "ObstacleSpawn",
       ({ name }) => {
@@ -215,11 +234,12 @@ export class InGameScene extends Phaser.Scene {
     multi: boolean;
     players: { uuid: string; nick: string }[];
     uuid: string;
-    ws: WebSocket;
+    ws: CustomWebSocket;
   }) {
     this.playersInfo = data.players;
     this.isMultiplay = data.multi;
     this.uuid = data.uuid;
     this.ws = data.ws;
+    console.log("init", data);
   }
 }

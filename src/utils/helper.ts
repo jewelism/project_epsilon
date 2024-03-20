@@ -1,21 +1,29 @@
-export function makesafeZone(
+export function makeSafeZone(
   scene: Phaser.Scene,
-  safeZonePoints: Phaser.Types.Tilemaps.TiledObject[],
+  safeZonePoints: Phaser.Types.Tilemaps.TiledObject[]
 ): Phaser.Geom.Rectangle[] {
   return safeZonePoints.map(({ x, y, width, height }) => {
-    const safeZone = scene.add.rectangle(x - 1, y - 1, width + 2, height + 2).setOrigin(0, 0);
+    const safeZone = scene.add
+      .rectangle(x - 1, y - 1, width + 2, height + 2)
+      .setOrigin(0, 0);
     safeZone.setFillStyle(0x00ff00, 0.5);
-    return new Phaser.Geom.Rectangle(safeZone.x, safeZone.y, safeZone.width, safeZone.height);
+
+    return new Phaser.Geom.Rectangle(
+      safeZone.x,
+      safeZone.y,
+      safeZone.width,
+      safeZone.height
+    );
   });
 }
 
 export const playMoveAnim = (char, spriteKey: string) => {
   if (char.body.velocity.x < 0) {
     char.anims.play(`${spriteKey}-left`, true);
-    char.direction = 'left';
+    char.direction = "left";
   } else if (char.body.velocity.x > 0) {
     char.anims.play(`${spriteKey}-right`, true);
-    char.direction = 'right';
+    char.direction = "right";
   }
 };
 
