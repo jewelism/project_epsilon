@@ -16,6 +16,24 @@ export function makeSafeZone(
     );
   });
 }
+export function makeNonstopZone(
+  scene: Phaser.Scene,
+  nonstopZonePoints: Phaser.Types.Tilemaps.TiledObject[]
+): Phaser.Geom.Rectangle[] {
+  return nonstopZonePoints.map(({ x, y, width, height }) => {
+    const nonstopZone = scene.add
+      .rectangle(x - 1, y - 1, width + 2, height + 2)
+      .setOrigin(0, 0);
+    nonstopZone.setFillStyle(0x00ffff, 0.5);
+
+    return new Phaser.Geom.Rectangle(
+      nonstopZone.x,
+      nonstopZone.y,
+      nonstopZone.width,
+      nonstopZone.height
+    );
+  });
+}
 
 export const playMoveAnim = (char, spriteKey: string) => {
   if (char.body.velocity.x < 0) {

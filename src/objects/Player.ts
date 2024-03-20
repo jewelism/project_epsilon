@@ -1,5 +1,6 @@
 import { signal } from "@preact/signals-core";
 import { defaultTextStyle } from "@/constants";
+import { InGameScene } from "@/scenes/InGameScene";
 
 export class Player extends Phaser.GameObjects.Container {
   moveSpeed = signal(80);
@@ -14,6 +15,7 @@ export class Player extends Phaser.GameObjects.Container {
   uuid: string;
   isMyPlayer: boolean;
   deadTweens: Phaser.Tweens.Tween;
+  isPlayerInNonstopZone: boolean;
 
   constructor(
     scene: Phaser.Scene,
@@ -52,15 +54,39 @@ export class Player extends Phaser.GameObjects.Container {
     );
   }
   preUpdate() {
-    this.stopWhenMouseTarget();
+    const isPlayerInNonstopZone = (
+      this.scene as InGameScene
+    ).isPlayerInNonstopZone();
+    console.log("isPlayerInNonstopZone", isPlayerInNonstopZone);
+
+    const scene = this.scene as InGameScene;
+    if (scene.isPlayerInNonstopZone()) {
+      this.isPlayerInNonstopZone = true;
+    } else if (scene.isPlayerInSafeZone()) {
+      this.stopWhenMouseTarget();
+      if (this.isPlayerInNonstopZone) {
+        this.isPlayerInNonstopZone = false;
+        this.stopMove();
+      }
+    }
+    // TODO: straightZone만들기;
+    // TODO: invertZone만들기;
   }
   moveToXY(x: number, y: number) {
     this.targetToMove = new Phaser.Math.Vector2(x, y);
+    const isPlayerInNonstopZone = (
+      this.scene as InGameScene
+    ).isPlayerInNonstopZone();
+    console.log("isPlayerInNonstopZone", isPlayerInNonstopZone);
+    // if (isPlayerInNonstopZone) {
+    //   this.scene.physics.moveTo(this, x, y, this.moveSpeed.value);
+    // } else {
     this.scene.physics.moveToObject(
       this,
       this.targetToMove,
       this.moveSpeed.value
     );
+    // }
     this.flipSpriteByDirection();
     this.sprite.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
   }
@@ -87,10 +113,10 @@ export class Player extends Phaser.GameObjects.Container {
     ) {
       return;
     }
-    this.targetToMove = null;
     this.stopMove();
   }
   stopMove() {
+    this.targetToMove = null;
     (this.body as any).setVelocity(0, 0);
   }
   playerDead(x: number, y: number) {
