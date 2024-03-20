@@ -217,9 +217,10 @@ export class InGameScene extends Phaser.Scene {
     super("InGameScene");
   }
   preload() {
-    this.load.tilemapTiledJSON("map", "phaser/tiled/map.json");
-    this.load.image("16tiles", "phaser/tiled/16tiles.png");
-    this.load.image("ski_tiled_image", "phaser/tiled/ski.png");
+    // this.load.tilemapTiledJSON("map", "phaser/tiled/map.json");
+    // this.load.image("16tiles", "phaser/tiled/16tiles.png");
+    this.load.tilemapTiledJSON("map", "phaser/tiled/map_ex.json");
+    this.load.image("ski_tiled_image", "phaser/tiled/ski_tiled_image.png");
 
     this.load.spritesheet("pixel_animals", "phaser/pixel_animals.png", {
       frameWidth: 16,
