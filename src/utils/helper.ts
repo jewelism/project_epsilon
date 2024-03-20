@@ -1,4 +1,4 @@
-export function makesafeZone(
+export function makeSafeZone(
   scene: Phaser.Scene,
   safeZonePoints: Phaser.Types.Tilemaps.TiledObject[]
 ): Phaser.Geom.Rectangle[] {
@@ -7,6 +7,7 @@ export function makesafeZone(
       .rectangle(x - 1, y - 1, width + 2, height + 2)
       .setOrigin(0, 0);
     safeZone.setFillStyle(0x00ff00, 0.5);
+
     return new Phaser.Geom.Rectangle(
       safeZone.x,
       safeZone.y,

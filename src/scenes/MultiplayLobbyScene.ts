@@ -1,7 +1,7 @@
 import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
 
-interface CustomWebSocket extends WebSocket {
+export interface CustomWebSocket extends WebSocket {
   uuid?: string;
   sendJson: (data: Record<string, unknown>) => void;
 }
@@ -42,8 +42,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     });
     const startButton = element.getChildByID("start");
     startButton.addEventListener("click", () => {
-      this.ws.sendJson({ type: "start", hostUuid: this.players[0].uuid });
-      this.startGame();
+      this.ws.sendJson({ type: "start", hostUuid: this.uuid });
     });
     // element.getChildByID("req_total_players").addEventListener("click", () => {
     //   this.ws.send(JSON.stringify({ type: "reqTotalPlayers" }));
@@ -108,9 +107,6 @@ export class MultiplayLobbyScene extends Phaser.Scene {
           break;
         }
         case "start": {
-          if (data.hostUuid !== this.players[0].uuid) {
-            return;
-          }
           this.startGame();
           removedListener = true;
           break;

@@ -94,7 +94,7 @@ export class Player extends Phaser.GameObjects.Container {
     (this.body as any).setVelocity(0, 0);
   }
   playerDead(x: number, y: number) {
-    console.log("playerDead", x, y);
+    console.log("playerDead", this.body);
     this.disabled = true;
     this.setPosition(x, y);
     this.stopMove();
