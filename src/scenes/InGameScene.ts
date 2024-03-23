@@ -1,4 +1,5 @@
 import { Player } from "@/objects/Player";
+import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
 import { TitleText } from "@/ui/TitleText";
 import { makeNonstopZone, makeSafeZone } from "@/utils/helper";
@@ -24,6 +25,7 @@ export class InGameScene extends Phaser.Scene {
   nonstopZone: Phaser.Geom.Rectangle[];
 
   async create() {
+    this.scene.launch("InGameUIScene");
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
@@ -39,6 +41,17 @@ export class InGameScene extends Phaser.Scene {
     this.safeZone = makeSafeZone(this, safeZonePoints);
     this.nonstopZone = makeNonstopZone(this, nonstopZonePoints);
     await this.createSocketConnection();
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.ws.sendJson({
+          type: "rtt",
+          uuid: this.uuid,
+          timestamp: Date.now(),
+        });
+      },
+      loop: true,
+    });
     this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
     // this.time.addEvent({
@@ -139,6 +152,11 @@ export class InGameScene extends Phaser.Scene {
     }
     if (data.type === "resurrection") {
       player.playerResurrection(Number(data.x), Number(data.y));
+    }
+    if (data.type === "rtt") {
+      (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
+        `rtt: ${Date.now() - data.timestamp}`
+      );
     }
   }
   createPlayers() {
