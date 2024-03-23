@@ -10,18 +10,17 @@ export class InGameUIScene extends Phaser.Scene {
   create() {
     const { width } = this.scale;
     this.pingText = this.add
-      .text(width - 10, 30, "rtt", {
-        fontSize: "24px",
-        color: "#000",
-      })
+      .text(width - 10, 30, "rtt", defaultTextStyle)
+      .setFontSize(15)
       .setOrigin(1);
     this.fpsText = this.add
       .text(width - 10, 60, "fps", defaultTextStyle)
+      .setFontSize(15)
       .setOrigin(1);
     this.time.addEvent({
       delay: 1000,
       callback: () => {
-        this.fpsText.setText(`fps: ${game.loop.actualFps}`);
+        this.fpsText.setText(`fps: ${game.loop.actualFps.toFixed(0)}`);
       },
       loop: true,
     });
