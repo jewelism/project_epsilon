@@ -87,7 +87,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
       const data = JSON.parse(value.data as any);
       console.log("data", data);
       const dataManager = {
-        uuid: (data) => {
+        uuid: () => {
           this.uuid = data.uuid;
           if (this.isHost) {
             this.players = [{ uuid: this.uuid, nick: this.nick }];

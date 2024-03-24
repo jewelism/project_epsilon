@@ -15,10 +15,11 @@ export class Player extends Phaser.GameObjects.Container {
   uuid: string;
   isMyPlayer: boolean;
   deadTweens: Phaser.Tweens.Tween;
-  zone: Record<"safe" | "nonstop" | "straight", boolean> = {
+  zone: Record<"safe" | "nonstop" | "straight" | "invert", boolean> = {
     safe: true,
     nonstop: false,
     straight: false,
+    invert: false,
   };
 
   constructor(
@@ -60,13 +61,21 @@ export class Player extends Phaser.GameObjects.Container {
   preUpdate() {
     this.updatePlayerInZone();
   }
-  moveToXY(x: number, y: number) {
-    this.targetToMove = new Phaser.Math.Vector2(x, y);
-    this.scene.physics.moveToObject(
-      this,
-      this.targetToMove,
-      this.moveSpeed.value
-    );
+  moveToXY(x: number, y: number, { invert = false } = {}) {
+    if (invert) {
+      this.scene.physics.velocityFromRotation(
+        Phaser.Math.Angle.Between(x, y, this.x, this.y),
+        this.moveSpeed.value,
+        this.body.velocity as Phaser.Math.Vector2
+      );
+    } else {
+      this.targetToMove = new Phaser.Math.Vector2(x, y);
+      this.scene.physics.moveToObject(
+        this,
+        this.targetToMove,
+        this.moveSpeed.value
+      );
+    }
     this.flipSpriteByDirection();
     this.sprite.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
   }
@@ -121,16 +130,19 @@ export class Player extends Phaser.GameObjects.Container {
     this.disabled = false;
   }
   updatePlayerInZone() {
-    if (this.isPlayerInNonstopZone()) {
+    if (this.isPlayerInInvertZone()) {
+      this.zone.invert = true;
+    } else if (this.isPlayerInNonstopZone()) {
       this.zone.nonstop = true;
     } else if (this.isPlayerInStraightZone()) {
       this.zone.nonstop = true;
       this.zone.straight = true;
     } else if (this.isPlayerInSafeZone()) {
       this.stopWhenMouseTarget();
-      if (this.zone.nonstop) {
+      if (this.zone.nonstop || this.zone.straight || this.zone.invert) {
         this.zone.nonstop = false;
         this.zone.straight = false;
+        this.zone.invert = false;
         this.stopMove();
       }
     }
@@ -151,5 +163,8 @@ export class Player extends Phaser.GameObjects.Container {
   }
   isPlayerInStraightZone() {
     return this.isPlayerInZone((this.scene as InGameScene).straightZone);
+  }
+  isPlayerInInvertZone() {
+    return this.isPlayerInZone((this.scene as InGameScene).invertZone);
   }
 }

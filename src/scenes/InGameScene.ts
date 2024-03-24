@@ -21,6 +21,7 @@ export class InGameScene extends Phaser.Scene {
   uuid: string;
   nonstopZone: Phaser.Geom.Rectangle[];
   straightZone: Phaser.Geom.Rectangle[];
+  invertZone: Phaser.Geom.Rectangle[];
 
   async create() {
     this.scene.launch("InGameUIScene");
@@ -30,17 +31,17 @@ export class InGameScene extends Phaser.Scene {
     const {
       map,
       playerSpawnPoints,
-      safeZonePoints,
+      aliveZonePoints,
+      zonePoints,
       obstacleSpawnPoints,
-      nonstopZonePoints,
-      straightZonePoints,
     } = this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
 
-    this.safeZone = makeZone(this, safeZonePoints, 0x00ff00);
-    this.nonstopZone = makeZone(this, nonstopZonePoints, 0x00ffff);
-    this.straightZone = makeZone(this, straightZonePoints, 0x00ffff);
+    this.safeZone = makeZone(this, aliveZonePoints, 0x00ff00);
+    this.nonstopZone = makeZone(this, zonePoints.nonstop, 0x00ffff);
+    this.straightZone = makeZone(this, zonePoints.straight, 0x00ffff);
+    this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
 
     await this.createSocketConnection();
     this.time.addEvent({
@@ -121,6 +122,7 @@ export class InGameScene extends Phaser.Scene {
         type: "move",
         x: pointer.worldX.toFixed(0),
         y: pointer.worldY.toFixed(0),
+        invert: this.player.zone.invert,
       });
     });
   }
@@ -151,7 +153,7 @@ export class InGameScene extends Phaser.Scene {
     const player = this.players.find(({ uuid }) => uuid === data.uuid);
     const dataManager = {
       move: () => {
-        player.moveToXY(data.x, data.y);
+        player.moveToXY(data.x, data.y, { invert: data.invert });
       },
       dead: () => {
         player.playerDead(Number(data.x), Number(data.y));
@@ -232,16 +234,15 @@ export class InGameScene extends Phaser.Scene {
     map.createLayer("bg_items", bgTiles);
 
     const playerSpawnPoints = map.findObject("PlayerSpawn", () => true);
-    const nonstopZonePoints =
-      map.filterObjects("nonStopZone", () => true) ?? [];
-    const straightZonePoints =
-      map.filterObjects("straightZone", () => true) ?? [];
-    const safeZonePoints = [
-      ...(map.filterObjects("safeZone", () => true) ?? []),
-      ...(map.filterObjects("safeZone_radius", () => true) ?? []),
-      ...nonstopZonePoints,
-      ...straightZonePoints,
-    ];
+    const areaKeys = ["nonstop", "straight", "invert", "safe"] as const;
+    const zonePoints = Object.fromEntries(
+      areaKeys.map((zone) => [
+        zone,
+        map.filterObjects(`${zone}Zone`, () => true) ?? [],
+      ])
+    ) as Record<(typeof areaKeys)[number], Phaser.Types.Tilemaps.TiledObject[]>;
+    const aliveZonePoints = Object.values(zonePoints).flat();
+
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
 
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -249,9 +250,8 @@ export class InGameScene extends Phaser.Scene {
     return {
       map,
       playerSpawnPoints,
-      safeZonePoints,
-      nonstopZonePoints,
-      straightZonePoints,
+      aliveZonePoints,
+      zonePoints,
       obstacleSpawnPoints,
     };
   }
