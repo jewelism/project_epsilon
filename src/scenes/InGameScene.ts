@@ -1,7 +1,7 @@
 import { Player } from "@/objects/Player";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
 import { TitleText } from "@/ui/TitleText";
-import { makeSafeZone } from "@/utils/helper";
+import { makeNonstopZone, makeSafeZone } from "@/utils/helper";
 import WebSocket from "tauri-plugin-websocket-api";
 
 // TODO: 스테이지 구성하기전에 멀티플레이 추가하고 되살리기 추가하기
@@ -21,16 +21,23 @@ export class InGameScene extends Phaser.Scene {
   isMultiplay: boolean;
   playersInfo: { uuid: string; nick: string }[];
   uuid: string;
+  nonstopZone: Phaser.Geom.Rectangle[];
 
   async create() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
-    const { map, playerSpawnPoints, safeZonePoints, obstacleSpawnPoints } =
-      this.createMap(this);
+    const {
+      map,
+      playerSpawnPoints,
+      safeZonePoints,
+      obstacleSpawnPoints,
+      nonstopZonePoints,
+    } = this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
     this.safeZone = makeSafeZone(this, safeZonePoints);
+    this.nonstopZone = makeNonstopZone(this, nonstopZonePoints);
     await this.createSocketConnection();
     this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
@@ -185,6 +192,15 @@ export class InGameScene extends Phaser.Scene {
     );
     return isSafe;
   }
+  isPlayerInNonstopZone() {
+    const isNonstop = this.nonstopZone.some((nonstopZone) =>
+      Phaser.Geom.Rectangle.ContainsPoint(
+        nonstopZone,
+        new Phaser.Geom.Point(this.player.x, this.player.y)
+      )
+    );
+    return isNonstop;
+  }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
       key: "map",
@@ -199,9 +215,10 @@ export class InGameScene extends Phaser.Scene {
     const safeZonePoints = [
       ...(map.filterObjects("safeZone", () => true) ?? []),
       ...(map.filterObjects("safeZone_radius", () => true) ?? []),
-      ...(map.filterObjects("nonstopZone", () => true) ?? []),
+      ...(map.filterObjects("nonStopZone", () => true) ?? []),
       ...(map.filterObjects("straightZone", () => true) ?? []),
     ];
+    const nonstopZonePoints = map.filterObjects("nonStopZone", () => true);
 
     const obstacleSpawnPoints = map.filterObjects(
       "ObstacleSpawn",
@@ -211,7 +228,13 @@ export class InGameScene extends Phaser.Scene {
     );
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-    return { map, playerSpawnPoints, safeZonePoints, obstacleSpawnPoints };
+    return {
+      map,
+      playerSpawnPoints,
+      safeZonePoints,
+      nonstopZonePoints,
+      obstacleSpawnPoints,
+    };
   }
   // createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
   //   // obstacleSpawnPoints.forEach(({ x, y }) => {});
