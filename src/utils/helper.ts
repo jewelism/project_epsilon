@@ -1,39 +1,18 @@
-export function makeSafeZone(
+export const makeZone = (
   scene: Phaser.Scene,
-  safeZonePoints: Phaser.Types.Tilemaps.TiledObject[]
-): Phaser.Geom.Rectangle[] {
-  return safeZonePoints.map(({ x, y, width, height }) => {
-    const safeZone = scene.add
+  zonePoints: Phaser.Types.Tilemaps.TiledObject[],
+  color?: number
+) => {
+  return zonePoints.map(({ x, y, width, height }) => {
+    const zone = scene.add
       .rectangle(x - 1, y - 1, width + 2, height + 2)
       .setOrigin(0, 0);
-    safeZone.setFillStyle(0x00ff00, 0.5);
-
-    return new Phaser.Geom.Rectangle(
-      safeZone.x,
-      safeZone.y,
-      safeZone.width,
-      safeZone.height
-    );
+    if (color) {
+      zone.setFillStyle(color, 0.5);
+    }
+    return new Phaser.Geom.Rectangle(zone.x, zone.y, zone.width, zone.height);
   });
-}
-export function makeNonstopZone(
-  scene: Phaser.Scene,
-  nonstopZonePoints: Phaser.Types.Tilemaps.TiledObject[]
-): Phaser.Geom.Rectangle[] {
-  return nonstopZonePoints.map(({ x, y, width, height }) => {
-    const nonstopZone = scene.add
-      .rectangle(x - 1, y - 1, width + 2, height + 2)
-      .setOrigin(0, 0);
-    nonstopZone.setFillStyle(0x00ffff, 0.5);
-
-    return new Phaser.Geom.Rectangle(
-      nonstopZone.x,
-      nonstopZone.y,
-      nonstopZone.width,
-      nonstopZone.height
-    );
-  });
-}
+};
 
 export const playMoveAnim = (char, spriteKey: string) => {
   if (char.body.velocity.x < 0) {

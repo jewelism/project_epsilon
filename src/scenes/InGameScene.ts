@@ -1,10 +1,8 @@
 import { Player } from "@/objects/Player";
+import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
-import { TitleText } from "@/ui/TitleText";
-import { makeNonstopZone, makeSafeZone } from "@/utils/helper";
-import WebSocket from "tauri-plugin-websocket-api";
+import { makeZone } from "@/utils/helper";
 
-// TODO: 스테이지 구성하기전에 멀티플레이 추가하고 되살리기 추가하기
 const GAME = {
   ZOOM: 2,
 };
@@ -22,23 +20,41 @@ export class InGameScene extends Phaser.Scene {
   playersInfo: { uuid: string; nick: string }[];
   uuid: string;
   nonstopZone: Phaser.Geom.Rectangle[];
+  straightZone: Phaser.Geom.Rectangle[];
+  invertZone: Phaser.Geom.Rectangle[];
 
   async create() {
+    this.scene.launch("InGameUIScene");
     this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
     const {
       map,
       playerSpawnPoints,
-      safeZonePoints,
+      aliveZonePoints,
+      zonePoints,
       obstacleSpawnPoints,
-      nonstopZonePoints,
     } = this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
-    this.safeZone = makeSafeZone(this, safeZonePoints);
-    this.nonstopZone = makeNonstopZone(this, nonstopZonePoints);
+
+    this.safeZone = makeZone(this, aliveZonePoints, 0x00ff00);
+    this.nonstopZone = makeZone(this, zonePoints.nonstop, 0x00ffff);
+    this.straightZone = makeZone(this, zonePoints.straight, 0x00ffff);
+    this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
+
     await this.createSocketConnection();
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.ws.sendJson({
+          type: "rtt",
+          uuid: this.uuid,
+          timestamp: Date.now(),
+        });
+      },
+      loop: true,
+    });
     this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
     // this.time.addEvent({
@@ -63,7 +79,7 @@ export class InGameScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
-    if (!this.isPlayerInSafeZone()) {
+    if (!this.player.isPlayerInSafeZone()) {
       if (this.player.disabled) {
         return;
       }
@@ -97,12 +113,16 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
+      if (this.player.zone.straight) {
+        return;
+      }
       this.ws.sendJson({
         uuid: this.player.uuid,
         hostUuid: this.playersInfo[0].uuid,
         type: "move",
         x: pointer.worldX.toFixed(0),
         y: pointer.worldY.toFixed(0),
+        invert: this.player.zone.invert,
       });
     });
   }
@@ -131,14 +151,26 @@ export class InGameScene extends Phaser.Scene {
       return;
     }
     const player = this.players.find(({ uuid }) => uuid === data.uuid);
-    if (data.type === "move") {
-      player.moveToXY(data.x, data.y);
-    }
-    if (data.type === "dead") {
-      player.playerDead(Number(data.x), Number(data.y));
-    }
-    if (data.type === "resurrection") {
-      player.playerResurrection(Number(data.x), Number(data.y));
+    const dataManager = {
+      move: () => {
+        player.moveToXY(data.x, data.y, { invert: data.invert });
+      },
+      dead: () => {
+        player.playerDead(Number(data.x), Number(data.y));
+      },
+      resurrection: () => {
+        player.playerResurrection(Number(data.x), Number(data.y));
+      },
+      rtt: () => {
+        (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
+          `rtt: ${Date.now() - data.timestamp}`
+        );
+      },
+    };
+    if (data.type in dataManager) {
+      dataManager[data.type]();
+    } else {
+      console.log("another type incoming: ", data);
     }
   }
   createPlayers() {
@@ -183,23 +215,13 @@ export class InGameScene extends Phaser.Scene {
       console.error("jew ws connection failed");
     }
   }
-  isPlayerInSafeZone() {
-    const isSafe = this.safeZone.some((safeZone) =>
+  isPlayerInZone(zone: Phaser.Geom.Rectangle[]) {
+    return zone.some((zone) =>
       Phaser.Geom.Rectangle.ContainsPoint(
-        safeZone,
+        zone,
         new Phaser.Geom.Point(this.player.x, this.player.y)
       )
     );
-    return isSafe;
-  }
-  isPlayerInNonstopZone() {
-    const isNonstop = this.nonstopZone.some((nonstopZone) =>
-      Phaser.Geom.Rectangle.ContainsPoint(
-        nonstopZone,
-        new Phaser.Geom.Point(this.player.x, this.player.y)
-      )
-    );
-    return isNonstop;
   }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
@@ -212,33 +234,31 @@ export class InGameScene extends Phaser.Scene {
     map.createLayer("bg_items", bgTiles);
 
     const playerSpawnPoints = map.findObject("PlayerSpawn", () => true);
-    const safeZonePoints = [
-      ...(map.filterObjects("safeZone", () => true) ?? []),
-      ...(map.filterObjects("safeZone_radius", () => true) ?? []),
-      ...(map.filterObjects("nonStopZone", () => true) ?? []),
-      ...(map.filterObjects("straightZone", () => true) ?? []),
-    ];
-    const nonstopZonePoints = map.filterObjects("nonStopZone", () => true);
+    const areaKeys = ["nonstop", "straight", "invert", "safe"] as const;
+    const zonePoints = Object.fromEntries(
+      areaKeys.map((zone) => [
+        zone,
+        map.filterObjects(`${zone}Zone`, () => true) ?? [],
+      ])
+    ) as Record<(typeof areaKeys)[number], Phaser.Types.Tilemaps.TiledObject[]>;
+    const aliveZonePoints = Object.values(zonePoints).flat();
 
-    const obstacleSpawnPoints = map.filterObjects(
-      "ObstacleSpawn",
-      ({ name }) => {
-        return name.includes("ObstacleSpawn");
-      }
-    );
+    const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
+
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     return {
       map,
       playerSpawnPoints,
-      safeZonePoints,
-      nonstopZonePoints,
+      aliveZonePoints,
+      zonePoints,
       obstacleSpawnPoints,
     };
   }
   // createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
   //   // obstacleSpawnPoints.forEach(({ x, y }) => {});
   // }
+
   constructor() {
     super("InGameScene");
   }

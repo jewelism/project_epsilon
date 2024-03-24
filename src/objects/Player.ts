@@ -15,7 +15,12 @@ export class Player extends Phaser.GameObjects.Container {
   uuid: string;
   isMyPlayer: boolean;
   deadTweens: Phaser.Tweens.Tween;
-  isPlayerInNonstopZone: boolean;
+  zone: Record<"safe" | "nonstop" | "straight" | "invert", boolean> = {
+    safe: true,
+    nonstop: false,
+    straight: false,
+    invert: false,
+  };
 
   constructor(
     scene: Phaser.Scene,
@@ -54,39 +59,23 @@ export class Player extends Phaser.GameObjects.Container {
     );
   }
   preUpdate() {
-    const isPlayerInNonstopZone = (
-      this.scene as InGameScene
-    ).isPlayerInNonstopZone();
-    console.log("isPlayerInNonstopZone", isPlayerInNonstopZone);
-
-    const scene = this.scene as InGameScene;
-    if (scene.isPlayerInNonstopZone()) {
-      this.isPlayerInNonstopZone = true;
-    } else if (scene.isPlayerInSafeZone()) {
-      this.stopWhenMouseTarget();
-      if (this.isPlayerInNonstopZone) {
-        this.isPlayerInNonstopZone = false;
-        this.stopMove();
-      }
-    }
-    // TODO: straightZone만들기;
-    // TODO: invertZone만들기;
+    this.updatePlayerInZone();
   }
-  moveToXY(x: number, y: number) {
-    this.targetToMove = new Phaser.Math.Vector2(x, y);
-    const isPlayerInNonstopZone = (
-      this.scene as InGameScene
-    ).isPlayerInNonstopZone();
-    console.log("isPlayerInNonstopZone", isPlayerInNonstopZone);
-    // if (isPlayerInNonstopZone) {
-    //   this.scene.physics.moveTo(this, x, y, this.moveSpeed.value);
-    // } else {
-    this.scene.physics.moveToObject(
-      this,
-      this.targetToMove,
-      this.moveSpeed.value
-    );
-    // }
+  moveToXY(x: number, y: number, { invert = false } = {}) {
+    if (invert) {
+      this.scene.physics.velocityFromRotation(
+        Phaser.Math.Angle.Between(x, y, this.x, this.y),
+        this.moveSpeed.value,
+        this.body.velocity as Phaser.Math.Vector2
+      );
+    } else {
+      this.targetToMove = new Phaser.Math.Vector2(x, y);
+      this.scene.physics.moveToObject(
+        this,
+        this.targetToMove,
+        this.moveSpeed.value
+      );
+    }
     this.flipSpriteByDirection();
     this.sprite.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
   }
@@ -139,5 +128,43 @@ export class Player extends Phaser.GameObjects.Container {
     this.deadTweens?.stop();
     this.sprite.angle = 0;
     this.disabled = false;
+  }
+  updatePlayerInZone() {
+    if (this.isPlayerInInvertZone()) {
+      this.zone.invert = true;
+    } else if (this.isPlayerInNonstopZone()) {
+      this.zone.nonstop = true;
+    } else if (this.isPlayerInStraightZone()) {
+      this.zone.nonstop = true;
+      this.zone.straight = true;
+    } else if (this.isPlayerInSafeZone()) {
+      this.stopWhenMouseTarget();
+      if (this.zone.nonstop || this.zone.straight || this.zone.invert) {
+        this.zone.nonstop = false;
+        this.zone.straight = false;
+        this.zone.invert = false;
+        this.stopMove();
+      }
+    }
+  }
+  isPlayerInZone(zone: Phaser.Geom.Rectangle[]) {
+    return zone.some((zone) =>
+      Phaser.Geom.Rectangle.ContainsPoint(
+        zone,
+        new Phaser.Geom.Point(this.x, this.y)
+      )
+    );
+  }
+  isPlayerInSafeZone() {
+    return this.isPlayerInZone((this.scene as InGameScene).safeZone);
+  }
+  isPlayerInNonstopZone() {
+    return this.isPlayerInZone((this.scene as InGameScene).nonstopZone);
+  }
+  isPlayerInStraightZone() {
+    return this.isPlayerInZone((this.scene as InGameScene).straightZone);
+  }
+  isPlayerInInvertZone() {
+    return this.isPlayerInZone((this.scene as InGameScene).invertZone);
   }
 }

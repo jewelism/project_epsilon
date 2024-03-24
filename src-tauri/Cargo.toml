@@ -15,7 +15,7 @@ rust-version = "1.60"
 tauri-build = { version = "1.5.1", features = [] }
 
 [dependencies]
-tauri = { version = "1.6.1", features = [ "http-all"] }
+tauri = { version = "1.6.1", features = [ "shell-sidecar", "http-all"] }
 tauri-plugin-websocket = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 [features]

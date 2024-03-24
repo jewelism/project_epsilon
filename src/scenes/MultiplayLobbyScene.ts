@@ -1,3 +1,4 @@
+import { Command } from "@tauri-apps/api/shell";
 import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
 
@@ -26,6 +27,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   nick: string;
 
   async create() {
+    const command = Command.sidecar("server_epsilon");
+    await command.spawn();
+
     this.cursors = this.input.keyboard.createCursorKeys();
 
     const title = new TitleText(this, "Lobby");
@@ -86,8 +90,8 @@ export class MultiplayLobbyScene extends Phaser.Scene {
       }
       const data = JSON.parse(value.data as any);
       console.log("data", data);
-      switch (data.type) {
-        case "uuid": {
+      const dataManager = {
+        uuid: () => {
           this.uuid = data.uuid;
           if (this.isHost) {
             this.players = [{ uuid: this.uuid, nick: this.nick }];
@@ -104,36 +108,32 @@ export class MultiplayLobbyScene extends Phaser.Scene {
               uuid: this.uuid,
             });
           }
-          break;
-        }
-        case "start": {
+        },
+        start: () => {
           this.startGame();
           removedListener = true;
-          break;
-        }
-        case "rooms": {
+        },
+        rooms: () => {
           if (!this.isHost) {
             this.createRoomsButton(data);
           }
-          break;
-        }
-        case "players": {
+        },
+        players: () => {
           this.players = data.players;
           this.elements.playerInfoText.innerText = `${
             this.players.length
           } players: ${JSON.stringify(this.players)}`;
-          break;
-        }
-        case "totalPlayers": {
+        },
+        totalPlayers: () => {
           element.getChildByID(
             "total_players"
           ).innerHTML = `total players: ${data.totalPlayers}`;
-          break;
-        }
-        default: {
-          console.log("unknown type", data);
-          break;
-        }
+        },
+      };
+      if (data.type in dataManager) {
+        dataManager[data.type]();
+      } else {
+        console.log("unknown type", data);
       }
     });
   }

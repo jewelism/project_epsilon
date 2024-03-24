@@ -1049,7 +1049,7 @@
         {
          "draworder":"topdown",
          "id":11,
-         "name":"nonStopZone",
+         "name":"nonstopZone",
          "objects":[
                 {
                  "height":33,
@@ -1103,6 +1103,28 @@
         }, 
         {
          "draworder":"topdown",
+         "id":13,
+         "name":"invertZone",
+         "objects":[
+                {
+                 "height":80.2568218298556,
+                 "id":334,
+                 "name":"invertZone1",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":84.762467967672,
+                 "x":16.8961730168117,
+                 "y":87.0152910365802
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":12,
          "name":"straightZone",
          "objects":[],
@@ -1134,8 +1156,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":13,
- "nextobjectid":334,
+ "nextlayerid":14,
+ "nextobjectid":335,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
