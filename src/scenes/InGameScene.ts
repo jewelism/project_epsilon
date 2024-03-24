@@ -1,11 +1,8 @@
 import { Player } from "@/objects/Player";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
-import { TitleText } from "@/ui/TitleText";
-import { makeNonstopZone, makeSafeZone } from "@/utils/helper";
-import WebSocket from "tauri-plugin-websocket-api";
+import { makeZone } from "@/utils/helper";
 
-// TODO: 스테이지 구성하기전에 멀티플레이 추가하고 되살리기 추가하기
 const GAME = {
   ZOOM: 2,
 };
@@ -23,6 +20,7 @@ export class InGameScene extends Phaser.Scene {
   playersInfo: { uuid: string; nick: string }[];
   uuid: string;
   nonstopZone: Phaser.Geom.Rectangle[];
+  straightZone: Phaser.Geom.Rectangle[];
 
   async create() {
     this.scene.launch("InGameUIScene");
@@ -35,11 +33,15 @@ export class InGameScene extends Phaser.Scene {
       safeZonePoints,
       obstacleSpawnPoints,
       nonstopZonePoints,
+      straightZonePoints,
     } = this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
-    this.safeZone = makeSafeZone(this, safeZonePoints);
-    this.nonstopZone = makeNonstopZone(this, nonstopZonePoints);
+
+    this.safeZone = makeZone(this, safeZonePoints, 0x00ff00);
+    this.nonstopZone = makeZone(this, nonstopZonePoints, 0x00ffff);
+    this.straightZone = makeZone(this, straightZonePoints, 0x00ffff);
+
     await this.createSocketConnection();
     this.time.addEvent({
       delay: 1000,
@@ -201,23 +203,19 @@ export class InGameScene extends Phaser.Scene {
       console.error("jew ws connection failed");
     }
   }
-  isPlayerInSafeZone() {
-    const isSafe = this.safeZone.some((safeZone) =>
+  isPlayerInZone(zone: Phaser.Geom.Rectangle[]) {
+    return zone.some((zone) =>
       Phaser.Geom.Rectangle.ContainsPoint(
-        safeZone,
+        zone,
         new Phaser.Geom.Point(this.player.x, this.player.y)
       )
     );
-    return isSafe;
+  }
+  isPlayerInSafeZone() {
+    return this.isPlayerInZone(this.safeZone);
   }
   isPlayerInNonstopZone() {
-    const isNonstop = this.nonstopZone.some((nonstopZone) =>
-      Phaser.Geom.Rectangle.ContainsPoint(
-        nonstopZone,
-        new Phaser.Geom.Point(this.player.x, this.player.y)
-      )
-    );
-    return isNonstop;
+    return this.isPlayerInZone(this.nonstopZone);
   }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
@@ -230,20 +228,18 @@ export class InGameScene extends Phaser.Scene {
     map.createLayer("bg_items", bgTiles);
 
     const playerSpawnPoints = map.findObject("PlayerSpawn", () => true);
+    const nonstopZonePoints =
+      map.filterObjects("nonStopZone", () => true) ?? [];
+    const straightZonePoints =
+      map.filterObjects("straightZone", () => true) ?? [];
     const safeZonePoints = [
       ...(map.filterObjects("safeZone", () => true) ?? []),
       ...(map.filterObjects("safeZone_radius", () => true) ?? []),
-      ...(map.filterObjects("nonStopZone", () => true) ?? []),
-      ...(map.filterObjects("straightZone", () => true) ?? []),
+      ...nonstopZonePoints,
+      ...straightZonePoints,
     ];
-    const nonstopZonePoints = map.filterObjects("nonStopZone", () => true);
+    const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
 
-    const obstacleSpawnPoints = map.filterObjects(
-      "ObstacleSpawn",
-      ({ name }) => {
-        return name.includes("ObstacleSpawn");
-      }
-    );
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     return {
@@ -251,6 +247,7 @@ export class InGameScene extends Phaser.Scene {
       playerSpawnPoints,
       safeZonePoints,
       nonstopZonePoints,
+      straightZonePoints,
       obstacleSpawnPoints,
     };
   }

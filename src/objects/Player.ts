@@ -54,6 +54,7 @@ export class Player extends Phaser.GameObjects.Container {
     );
   }
   preUpdate() {
+    // TODO: straightZone만들기;
     const isPlayerInNonstopZone = (
       this.scene as InGameScene
     ).isPlayerInNonstopZone();
