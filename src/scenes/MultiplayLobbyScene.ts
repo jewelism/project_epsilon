@@ -1,3 +1,4 @@
+import { Command } from "@tauri-apps/api/shell";
 import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
 
@@ -26,6 +27,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   nick: string;
 
   async create() {
+    const command = Command.sidecar("server_epsilon");
+    await command.spawn();
+
     this.cursors = this.input.keyboard.createCursorKeys();
 
     const title = new TitleText(this, "Lobby");
