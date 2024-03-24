@@ -78,7 +78,7 @@ export class InGameScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
-    if (!this.isPlayerInSafeZone()) {
+    if (!this.player.isPlayerInSafeZone()) {
       if (this.player.disabled) {
         return;
       }
@@ -110,6 +110,9 @@ export class InGameScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.mouseClickEffect(this, pointer);
       if (this.player.disabled) {
+        return;
+      }
+      if (this.player.zone.straight) {
         return;
       }
       this.ws.sendJson({
@@ -211,12 +214,6 @@ export class InGameScene extends Phaser.Scene {
       )
     );
   }
-  isPlayerInSafeZone() {
-    return this.isPlayerInZone(this.safeZone);
-  }
-  isPlayerInNonstopZone() {
-    return this.isPlayerInZone(this.nonstopZone);
-  }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
       key: "map",
@@ -254,6 +251,7 @@ export class InGameScene extends Phaser.Scene {
   // createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
   //   // obstacleSpawnPoints.forEach(({ x, y }) => {});
   // }
+
   constructor() {
     super("InGameScene");
   }
