@@ -149,19 +149,26 @@ export class InGameScene extends Phaser.Scene {
       return;
     }
     const player = this.players.find(({ uuid }) => uuid === data.uuid);
-    if (data.type === "move") {
-      player.moveToXY(data.x, data.y);
-    }
-    if (data.type === "dead") {
-      player.playerDead(Number(data.x), Number(data.y));
-    }
-    if (data.type === "resurrection") {
-      player.playerResurrection(Number(data.x), Number(data.y));
-    }
-    if (data.type === "rtt") {
-      (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
-        `rtt: ${Date.now() - data.timestamp}`
-      );
+    const dataManager = {
+      move: () => {
+        player.moveToXY(data.x, data.y);
+      },
+      dead: () => {
+        player.playerDead(Number(data.x), Number(data.y));
+      },
+      resurrection: () => {
+        player.playerResurrection(Number(data.x), Number(data.y));
+      },
+      rtt: () => {
+        (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
+          `rtt: ${Date.now() - data.timestamp}`
+        );
+      },
+    };
+    if (data.type in dataManager) {
+      dataManager[data.type]();
+    } else {
+      console.log("another type incoming: ", data);
     }
   }
   createPlayers() {
