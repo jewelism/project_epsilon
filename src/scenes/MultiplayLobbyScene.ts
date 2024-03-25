@@ -27,8 +27,10 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   nick: string;
 
   async create() {
-    const command = Command.sidecar("server_epsilon");
-    await command.spawn();
+    if (this.isHost) {
+      const command = Command.sidecar("server_epsilon");
+      await command.spawn();
+    }
 
     this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -66,19 +68,29 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     });
   }
   async getSocketConnection(element: Phaser.GameObjects.DOMElement) {
-    try {
+    const tryConnect = async () => {
       this.elements.playerInfoText.innerText = `try to connect...`;
-      this.ws = (await WebSocket.connect(
-        `ws://${this.inputFields.ipAddrInput}:20058`
-      )) as CustomWebSocket;
-      this.ws.sendJson = (data) => this.ws.send(JSON.stringify(data));
-      element.getChildByID("first_connection").remove();
-      this.elements.playerInfoText.innerText = this.isHost
-        ? "waiting for players"
-        : "select room";
-    } catch (e) {
-      this.elements.playerInfoText.innerText = `ws connection failed ${e}`;
+      try {
+        this.ws = (await WebSocket.connect(
+          `ws://${this.inputFields.ipAddrInput}:20058`
+        )) as CustomWebSocket;
+      } catch (e) {
+        this.elements.playerInfoText.innerText = `ws connection failed ${e}`;
+      }
+    };
+    while (true) {
+      await tryConnect();
+      if (this.ws) {
+        break;
+      }
     }
+    console.log("connected");
+    this.ws.sendJson = (data) => this.ws.send(JSON.stringify(data));
+
+    element.getChildByID("first_connection").remove();
+    this.elements.playerInfoText.innerText = this.isHost
+      ? "waiting for players"
+      : "select room";
 
     this.ws.addListener((value) => {
       if (removedListener) {
