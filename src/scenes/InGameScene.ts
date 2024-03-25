@@ -285,4 +285,9 @@ export class InGameScene extends Phaser.Scene {
     this.ws = data.ws;
     console.log("init", data);
   }
+  destroy() {
+    console.log("destroy");
+
+    this.ws.disconnect();
+  }
 }
