@@ -95,8 +95,8 @@ export class InGameScene extends Phaser.Scene {
   }
   onMyPlayerCreated() {
     this.cameras.main
-      .setBounds(0, 0, this.map.heightInPixels, this.map.widthInPixels)
-      .startFollow(this.player.body, false)
+      .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
+      .startFollow(this.player, false)
       .setZoom(GAME.ZOOM);
 
     this.physics.add.overlap(this.obstacles, this.player, () => {
@@ -234,7 +234,7 @@ export class InGameScene extends Phaser.Scene {
     map.createLayer("bg_items", bgTiles);
 
     const playerSpawnPoints = map.findObject("PlayerSpawn", () => true);
-    const areaKeys = ["nonstop", "straight", "invert", "safe"] as const;
+    const areaKeys = ["safe", "nonstop", "straight", "invert"] as const;
     const zonePoints = Object.fromEntries(
       areaKeys.map((zone) => [
         zone,
