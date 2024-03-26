@@ -18,15 +18,15 @@ fn main() {
         "local", /* the unique window label */
         tauri::WindowUrl::App("index.html".into())
       ).build()?;
-      tauri::WindowBuilder::new(
-        app,
-        "local2",
-        tauri::WindowUrl::App("index.html".into())
-      ).build()?;
+      // tauri::WindowBuilder::new(
+      //   app,
+      //   "local2",
+      //   tauri::WindowUrl::App("index.html".into())
+      // ).build()?;
         let window = app.get_window("main").unwrap();
-        let window2 = app.get_window("local").unwrap();
+        // let window2 = app.get_window("local").unwrap();
         window.open_devtools();
-        window2.open_devtools();
+        // window2.open_devtools();
       Ok(())
     })
     // .invoke_handler(tauri::generate_handler![serving])  

@@ -1,12 +1,19 @@
 import Phaser from "phaser";
+import "normalize.css";
 import { StartScene } from "@/scenes/StartScene";
 import { MultiplayLobbyScene } from "@/scenes/MultiplayLobbyScene";
 import { InGameScene } from "@/scenes/InGameScene";
-import "normalize.css";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
+import { EditPlayerScene } from "@/scenes/EditPlayerScene";
 
 const config: Phaser.Types.Core.GameConfig = {
-  scene: [StartScene, MultiplayLobbyScene, InGameScene, InGameUIScene],
+  scene: [
+    StartScene,
+    EditPlayerScene,
+    MultiplayLobbyScene,
+    InGameScene,
+    InGameUIScene,
+  ],
   title: "project epsilon",
   url: "jewelism.github.io",
   // type: Phaser.WEBGL,

@@ -1,27 +1,21 @@
-<input
-  type="text"
-  name="nick"
-  placeholder="enter nickname"
-  maxlength="10"
-  style="width: 216px; height: 30px; font-size: 20px; background-color: #fff"
-/><br />
+<h1>Ice Escape</h1>
 <!-- <input
   type="button"
   name="singleplayButton"
   value="Single Player"
   style="width: 220px; height: 30px; font-size: 20px; background-color: #fff"
-/><br /><br /> -->
+  /><br /><br /> -->
 <input
   type="button"
   name="createMulti"
   value="Create Multiplayer"
-  style="width: 220px; height: 30px; font-size: 20px; background-color: #fff"
+  class="multi_button"
 /><br />
 <input
   type="button"
   name="joinMulti"
   value="Join Multiplayer"
-  style="width: 220px; height: 30px; font-size: 20px; background-color: #fff"
+  class="multi_button"
 /><br /><br />
 <input
   type="text"
@@ -35,4 +29,18 @@
 <button id="localhost">localhost</button>
 <button id="tplink">jewelry server</button>
 <br />
-<p id="status" style="font-size: 15px; background-color: #fff"></p>
+<button id="edit_player">edit player</button>
+
+<style>
+  h1 {
+    text-align: center;
+    background-color: #fff;
+  }
+  input {
+    width: 100%;
+    max-width: 300px;
+    height: 30px;
+    font-size: 20px;
+    background-color: #fff;
+  }
+</style>

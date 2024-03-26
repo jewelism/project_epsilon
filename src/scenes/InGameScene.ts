@@ -17,7 +17,7 @@ export class InGameScene extends Phaser.Scene {
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   map: Phaser.Tilemaps.Tilemap;
   isMultiplay: boolean;
-  playersInfo: { uuid: string; nick: string }[];
+  playersInfo: { uuid: string; nick: string; frameNo: number }[];
   uuid: string;
   nonstopZone: Phaser.Geom.Rectangle[];
   straightZone: Phaser.Geom.Rectangle[];
@@ -59,23 +59,6 @@ export class InGameScene extends Phaser.Scene {
       loop: true,
     });
     // this.createObstacle(obstacleSpawnPoints);
-    // this.time.addEvent({
-    //   delay: 2000,
-    //   callback: () => {
-    //     // console.log(
-    //     //   "dead check",
-    //     //   this.players.every(({ disabled }) => disabled),
-    //     //   this.players
-    //     // );
-
-    //     if (this.players.every(({ disabled }) => disabled)) {
-    //       console.log("all dead");
-
-    //       this.scene.restart();
-    //     }
-    //   },
-    //   loop: true,
-    // });
   }
   update(_time: number, _delta: number): void {
     if (!this.player) {
@@ -86,8 +69,6 @@ export class InGameScene extends Phaser.Scene {
         return;
       }
       this.player.disabled = true;
-      console.log("playerDead", this.player.x, this.player.y);
-
       this.ws.sendJson({
         uuid: this.player.uuid,
         hostUuid: this.playersInfo[0].uuid,
@@ -181,15 +162,13 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   createPlayers() {
-    console.log("createPlayers", this.playersInfo);
-
     this.playersInfo.forEach((player) => {
       const isMyPlayer = player.uuid === this.uuid;
       const newPlayer = new Player(this, {
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
         spriteKey: "pixel_animals",
-        frameNo: 0,
+        frameNo: player.frameNo,
         nick: player.nick,
         uuid: player.uuid,
         isMyPlayer,
@@ -305,7 +284,7 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data: {
     multi: boolean;
-    players: { uuid: string; nick: string }[];
+    players: { uuid: string; nick: string; frameNo: number }[];
     uuid: string;
     ws: CustomWebSocket;
   }) {
@@ -313,11 +292,5 @@ export class InGameScene extends Phaser.Scene {
     this.isMultiplay = data.multi;
     this.uuid = data.uuid;
     this.ws = data.ws;
-    console.log("init", data);
-  }
-  destroy() {
-    console.log("destroy");
-
-    this.ws.disconnect();
   }
 }

@@ -12,18 +12,19 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   ws: CustomWebSocket;
   isHost: boolean;
-  players: { uuid: string; nick: string }[] = [];
+  players: { uuid: string; nick: string; frameNo: number }[] = [];
 
   inputFields: Record<string, string> = {};
   elements: Record<string, HTMLElement> = {};
   uuid: string;
   nick: string;
+  frameNo: any;
 
   async create() {
-    if (this.isHost) {
-      const command = Command.sidecar("server_epsilon");
-      await command.spawn();
-    }
+    // if (this.isHost) {
+    //   const command = Command.sidecar("server_epsilon");
+    //   await command.spawn();
+    // }
 
     this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -68,7 +69,6 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         break;
       }
     }
-    console.log("connected");
     this.ws.sendJson = (data) => this.ws.send(JSON.stringify(data));
 
     this.elements.playerInfoText.innerText = "waiting for players";
@@ -78,11 +78,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         return;
       }
       if (value.type !== "Text") {
-        // console.log("another type incoming: ", value);
         return;
       }
       const data = JSON.parse(value.data as any);
-      console.log("data", data);
       const dataManager = {
         uuid: () => {
           this.uuid = data.uuid;
@@ -90,6 +88,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
             type: "joinInLobby",
             uuid: this.uuid,
             nick: this.nick,
+            frameNo: this.frameNo,
           });
         },
         start: () => {
@@ -101,7 +100,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
           this.elements.playerInfoText.innerText = `${
             this.players.length
           } players: ${JSON.stringify(
-            this.players.map((p) => ({ nick: p.nick }))
+            this.players.map((p) => ({ nick: p.nick, frameNo: p.frameNo }))
           )}`;
         },
       };
@@ -133,7 +132,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   init(data) {
     this.isHost = data.host;
     this.nick = data.nick;
+    this.frameNo = data.frameNo;
     this.inputFields.ipAddrInput = data.ipAddrInput;
+    localStorage.setItem("nick", data.nick);
   }
   preload() {
     this.load.html("multiplay_lobby_form", "phaser/multiplay_lobby_form.html");
