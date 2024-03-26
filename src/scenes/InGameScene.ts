@@ -44,18 +44,20 @@ export class InGameScene extends Phaser.Scene {
     this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
 
     await this.createSocketConnection();
+    this.createPlayers();
     this.time.addEvent({
-      delay: 1000,
+      delay: 100,
       callback: () => {
         this.ws.sendJson({
           type: "rtt",
           uuid: this.uuid,
           timestamp: Date.now(),
+          x: Number(this.player.x.toFixed(0)),
+          y: Number(this.player.y.toFixed(0)),
         });
       },
       loop: true,
     });
-    this.createPlayers();
     // this.createObstacle(obstacleSpawnPoints);
     // this.time.addEvent({
     //   delay: 2000,
@@ -84,6 +86,8 @@ export class InGameScene extends Phaser.Scene {
         return;
       }
       this.player.disabled = true;
+      console.log("playerDead", this.player.x, this.player.y);
+
       this.ws.sendJson({
         uuid: this.player.uuid,
         hostUuid: this.playersInfo[0].uuid,
@@ -153,7 +157,9 @@ export class InGameScene extends Phaser.Scene {
     const player = this.players.find(({ uuid }) => uuid === data.uuid);
     const dataManager = {
       move: () => {
-        player.moveToXY(data.x, data.y, { invert: data.invert });
+        player.moveToXY(Number(data.x), Number(data.y), {
+          invert: data.invert,
+        });
       },
       dead: () => {
         player.playerDead(Number(data.x), Number(data.y));
@@ -165,6 +171,7 @@ export class InGameScene extends Phaser.Scene {
         (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
           `rtt: ${Date.now() - data.timestamp}`
         );
+        this.playerPositionCorrection(data);
       },
     };
     if (data.type in dataManager) {
@@ -222,6 +229,29 @@ export class InGameScene extends Phaser.Scene {
         new Phaser.Geom.Point(this.player.x, this.player.y)
       )
     );
+  }
+  playerPositionCorrection(serverData: {
+    players: { x: number; y: number; uuid: string }[];
+  }) {
+    serverData.players.forEach((player) => {
+      const foundPlayer = this.players.find(({ uuid }) => uuid === player.uuid);
+      if (
+        [
+          Math.abs(foundPlayer.x - player.x),
+          Math.abs(foundPlayer.y - player.y),
+        ].some((p) => p > 16)
+      ) {
+        foundPlayer.setPosition(player.x, player.y);
+        console.log(
+          "위치보정:",
+          player.x,
+          player.y,
+          ", 원래위치:",
+          foundPlayer.x,
+          foundPlayer.y
+        );
+      }
+    });
   }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({

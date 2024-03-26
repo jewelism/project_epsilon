@@ -100,7 +100,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
           this.players = data.players;
           this.elements.playerInfoText.innerText = `${
             this.players.length
-          } players: ${JSON.stringify(this.players)}`;
+          } players: ${JSON.stringify(
+            this.players.map((p) => ({ nick: p.nick }))
+          )}`;
         },
       };
       if (data.type in dataManager) {
