@@ -258,7 +258,13 @@ export class InGameScene extends Phaser.Scene {
       ({ properties }) =>
         properties?.find(({ name }) => name === "isMove").value
     );
+    const stopObstacles = obstacleSpawnPoints.filter(
+      ({ properties }) =>
+        !properties?.find(({ name }) => name === "isMove").value
+    );
+
     this.createMovingObstacles(movingObstacles);
+    this.createStopObstacle(stopObstacles);
 
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
@@ -272,18 +278,41 @@ export class InGameScene extends Phaser.Scene {
   }
   onGameOver() {}
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
-    movingObstacles.forEach(({ x, y, height, properties }) => {
+    movingObstacles.forEach(({ x, y, width, height, properties }) => {
       const obstacle = this.add
         .sprite(x, y - 16, "pixel_animals", 0)
         .setOrigin(0, 0);
-      this.tweens.add({
+      const isHorizontal = properties?.find(
+        ({ name }) => name === "isHorizontal"
+      )?.value;
+      const tweens = {
         targets: obstacle,
-        y: y + height,
         duration:
           properties?.find(({ name }) => name === "duration")?.value ?? 2000,
         yoyo: true,
         repeat: -1,
-      });
+      };
+      if (isHorizontal) {
+        this.tweens.add({
+          ...tweens,
+          x: x + width,
+        });
+      } else {
+        this.tweens.add({
+          ...tweens,
+          y: y + height,
+        });
+      }
+      this.obstacles.add(obstacle);
+    });
+  }
+  createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
+    stopObstacles.forEach(({ x, y, width, height }) => {
+      const obstacle = this.add
+        .sprite(x, y, "pixel_animals", 0)
+        .setDisplaySize(width, height)
+        .setOrigin(0, 0);
+      this.obstacles.add(obstacle);
     });
   }
 

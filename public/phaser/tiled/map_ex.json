@@ -228,6 +228,11 @@
                  "name":"ObstacleSpawn1",
                  "properties":[
                         {
+                         "name":"isHorizontal",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
                          "name":"isMove",
                          "type":"bool",
                          "value":true
