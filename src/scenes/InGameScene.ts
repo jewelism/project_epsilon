@@ -27,13 +27,8 @@ export class InGameScene extends Phaser.Scene {
     this.scene.launch("InGameUIScene");
     this.obstacles = this.physics.add.group();
 
-    const {
-      map,
-      playerSpawnPoints,
-      aliveZonePoints,
-      zonePoints,
-      obstacleSpawnPoints,
-    } = this.createMap(this);
+    const { map, playerSpawnPoints, aliveZonePoints, zonePoints } =
+      this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
 
@@ -154,8 +149,8 @@ export class InGameScene extends Phaser.Scene {
         }
       },
       resurrection: () => {
-        player.isResurrecting = true;
         player.playerResurrection(Number(data.x), Number(data.y));
+        player.isResurrecting = true;
         this.time.addEvent({
           delay: GAME.RTT + 10,
           callback: () => {
@@ -253,8 +248,6 @@ export class InGameScene extends Phaser.Scene {
     const map = scene.make.tilemap({
       key: "map",
     });
-
-    // const bgTiles = map.addTilesetImage("16tiles", "16tiles");
     const bgTiles = map.addTilesetImage("ski", "ski_tiled_image");
     map.createLayer("bg", bgTiles);
     map.createLayer("bg_items", bgTiles);
@@ -288,10 +281,8 @@ export class InGameScene extends Phaser.Scene {
       playerSpawnPoints,
       aliveZonePoints,
       zonePoints,
-      obstacleSpawnPoints,
     };
   }
-  onGameOver() {}
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     movingObstacles.forEach(({ x, y, width, height, properties }) => {
       const obstacle = new Obstacle(this, {
@@ -339,6 +330,20 @@ export class InGameScene extends Phaser.Scene {
       obstacle.sprite.setDisplaySize(width, height);
       this.obstacles.add(obstacle);
     });
+  }
+  onGameOver() {
+    console.log("game over");
+    this.scene.pause();
+    const inGameUIScene = this.scene.get("InGameUIScene");
+    // TODO: inGameUIScene에서 메소드만들고 game over text 띄우기.
+    // inGameUIScene.gameover
+    inGameUIScene.time.delayedCall(2000, () => {
+      this.shutdown();
+      this.scene.restart();
+    });
+  }
+  shutdown() {
+    this.players = [];
   }
 
   constructor() {
