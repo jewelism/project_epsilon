@@ -109,6 +109,11 @@
                  "name":"ObstacleSpawn1",
                  "properties":[
                         {
+                         "name":"duration",
+                         "type":"int",
+                         "value":1000
+                        }, 
+                        {
                          "name":"isMove",
                          "type":"bool",
                          "value":true
@@ -2155,17 +2160,6 @@
          "id":13,
          "name":"invertZone",
          "objects":[
-                {
-                 "height":80.2568218298556,
-                 "id":334,
-                 "name":"invertZone1",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":84.762467967672,
-                 "x":16.8961730168117,
-                 "y":87.0152910365802
-                }, 
                 {
                  "height":102,
                  "id":419,

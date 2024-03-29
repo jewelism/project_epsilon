@@ -1,3 +1,4 @@
+import { Obstacle } from "@/objects/Obstacle";
 import { Player } from "@/objects/Player";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
@@ -253,7 +254,6 @@ export class InGameScene extends Phaser.Scene {
     const aliveZonePoints = Object.values(zonePoints).flat();
 
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
-
     const movingObstacles = obstacleSpawnPoints.filter(
       ({ properties }) =>
         properties?.find(({ name }) => name === "isMove").value
@@ -262,7 +262,6 @@ export class InGameScene extends Phaser.Scene {
       ({ properties }) =>
         !properties?.find(({ name }) => name === "isMove").value
     );
-
     this.createMovingObstacles(movingObstacles);
     this.createStopObstacle(stopObstacles);
 
@@ -279,9 +278,14 @@ export class InGameScene extends Phaser.Scene {
   onGameOver() {}
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     movingObstacles.forEach(({ x, y, width, height, properties }) => {
-      const obstacle = this.add
-        .sprite(x, y - 16, "pixel_animals", 0)
-        .setOrigin(0, 0);
+      const obstacle = new Obstacle(this, {
+        x,
+        y,
+        width: 10,
+        height: 8,
+        spriteKey: "pixel_animals",
+        frameNo: 2,
+      });
       const isHorizontal = properties?.find(
         ({ name }) => name === "isHorizontal"
       )?.value;
@@ -308,10 +312,15 @@ export class InGameScene extends Phaser.Scene {
   }
   createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     stopObstacles.forEach(({ x, y, width, height }) => {
-      const obstacle = this.add
-        .sprite(x, y, "pixel_animals", 0)
-        .setDisplaySize(width, height)
-        .setOrigin(0, 0);
+      const obstacle = new Obstacle(this, {
+        x,
+        y,
+        width: width - width / 3,
+        height: height - height / 3,
+        spriteKey: "pixel_animals",
+        frameNo: 0,
+      });
+      obstacle.sprite.setDisplaySize(width, height);
       this.obstacles.add(obstacle);
     });
   }
