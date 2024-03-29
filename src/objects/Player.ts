@@ -21,6 +21,7 @@ export class Player extends Phaser.GameObjects.Container {
     straight: false,
     invert: false,
   };
+  isResurrecting = false;
 
   constructor(
     scene: Phaser.Scene,

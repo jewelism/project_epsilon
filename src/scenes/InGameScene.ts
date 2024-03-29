@@ -6,6 +6,7 @@ import { makeZone } from "@/utils/helper";
 
 const GAME = {
   ZOOM: 2,
+  RTT: 100,
 };
 export class InGameScene extends Phaser.Scene {
   player: Player;
@@ -44,7 +45,7 @@ export class InGameScene extends Phaser.Scene {
     await this.createSocketConnection();
     this.createPlayers();
     this.time.addEvent({
-      delay: 100,
+      delay: GAME.RTT,
       callback: () => {
         this.ws.sendJson({
           type: "rtt",
@@ -66,10 +67,11 @@ export class InGameScene extends Phaser.Scene {
       return;
     }
     if (!this.player.isPlayerInSafeZone()) {
-      this.player.disabled = true;
+      if (this.player.disabled) {
+        return;
+      }
       this.ws.sendJson({
         uuid: this.player.uuid,
-        hostUuid: this.playersInfo[0].uuid,
         type: "dead",
         x: this.player.x.toFixed(0),
         y: this.player.y.toFixed(0),
@@ -83,8 +85,10 @@ export class InGameScene extends Phaser.Scene {
       .setZoom(GAME.ZOOM);
 
     this.physics.add.overlap(this.obstacles, this.player, () => {
+      if (this.player.disabled) {
+        return;
+      }
       this.ws.sendJson({
-        hostUuid: this.playersInfo[0].uuid,
         uuid: this.player.uuid,
         type: "dead",
         x: this.player.x.toFixed(0),
@@ -141,13 +145,23 @@ export class InGameScene extends Phaser.Scene {
         });
       },
       dead: () => {
+        if (player.disabled) {
+          return;
+        }
         player.playerDead(Number(data.x), Number(data.y));
         if (this.players.every(({ disabled }) => disabled)) {
           this.onGameOver();
         }
       },
       resurrection: () => {
+        player.isResurrecting = true;
         player.playerResurrection(Number(data.x), Number(data.y));
+        this.time.addEvent({
+          delay: GAME.RTT + 10,
+          callback: () => {
+            player.isResurrecting = false;
+          },
+        });
       },
       rtt: () => {
         (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
@@ -187,7 +201,6 @@ export class InGameScene extends Phaser.Scene {
         return;
       }
       this.ws.sendJson({
-        hostUuid: this.playersInfo[0].uuid,
         uuid: player.uuid,
         type: "resurrection",
         x: this.playerSpawnPoints.x,
@@ -215,6 +228,9 @@ export class InGameScene extends Phaser.Scene {
   }) {
     serverData.players.forEach(({ x, y, uuid }) => {
       const foundPlayer = this.players.find((p) => p.uuid === uuid);
+      if (foundPlayer.isResurrecting) {
+        return;
+      }
       const { x: foundPlayerX, y: foundPlayerY } = foundPlayer;
       if (
         [Math.abs(foundPlayerX - x), Math.abs(foundPlayerY - y)].some(
