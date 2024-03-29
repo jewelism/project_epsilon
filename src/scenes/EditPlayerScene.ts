@@ -1,17 +1,19 @@
 import { StartScene } from "@/scenes/StartScene";
-import { effect, signal } from "@preact/signals-core";
+
+const totalChars = 24;
+const row = 6;
+const charSize = 16;
+const scale = 2;
+const charSizeScaled = charSize * scale;
+const backgroundRectWidth = charSizeScaled * row;
 
 export class EditPlayerScene extends Phaser.Scene {
   container: Phaser.GameObjects.Container;
   selectedCharframeNo = 0;
   selectedCharImage: Phaser.GameObjects.Image;
+  nickEl: HTMLInputElement;
 
   create() {
-    const totalChars = 24;
-    const row = 6;
-    const charSize = 16;
-    const scale = 2;
-    const charSizeScaled = charSize * scale;
     this.container = this.add.container(this.cameras.main.centerX, 200);
     const charButtons = Array.from({ length: totalChars }, (_, i) => i * 2).map(
       (frameNo, i) => {
@@ -35,43 +37,40 @@ export class EditPlayerScene extends Phaser.Scene {
       .setScale(scale * 2);
 
     const element = this.add.dom(0, 175).createFromCache("edit_player");
-    const nickEl = element.getChildByName("nick") as HTMLInputElement;
-    nickEl.focus();
+    this.nickEl = element.getChildByName("nick") as HTMLInputElement;
+    this.nickEl.focus();
     const okEl = element.getChildByID("ok") as HTMLButtonElement;
     okEl.addEventListener("click", () => {
-      localStorage.setItem("nick", nickEl.value);
-      localStorage.setItem("frameNo", this.selectedCharframeNo.toString());
-      this.scene.start("StartScene");
+      this.onSave(this.nickEl.value);
     });
-    // const savedNick = localStorage.getItem("nick");
-    // if (savedNick) {
-    //   nickEl.value = savedNick;
-    // }
+    const backgroundRect = this.add.rectangle(
+      0,
+      0,
+      backgroundRectWidth,
+      (charSizeScaled * totalChars) / row + element.height,
+      0xfff,
+      0.1
+    );
     this.container.add([
-      this.add.rectangle(
-        0,
-        0,
-        charSizeScaled * row,
-        (charSizeScaled * totalChars) / row + element.height
-        // 0xfff,
-        // 0.5
-      ),
+      backgroundRect,
       ...charButtons,
       this.selectedCharImage,
       element,
     ]);
-    const savedNick = localStorage.getItem("nick");
-    if (savedNick) {
-      nickEl.value = savedNick;
-    }
-    const savedFrameNo = localStorage.getItem("frameNo");
-    if (savedFrameNo) {
-      this.onSelectChar(Number(savedFrameNo));
-    }
+    this.loadSaveValue();
+  }
+  loadSaveValue() {
+    this.nickEl.value = localStorage.getItem("nick") || "";
+    this.onSelectChar(Number(localStorage.getItem("frameNo")) || 0);
   }
   onSelectChar(frameNo: number) {
     this.selectedCharframeNo = frameNo;
     this.selectedCharImage.setFrame(frameNo);
+  }
+  onSave(nick: string) {
+    localStorage.setItem("nick", nick);
+    localStorage.setItem("frameNo", this.selectedCharframeNo.toString());
+    this.scene.start("StartScene");
   }
   constructor() {
     super("EditPlayerScene");
@@ -82,8 +81,5 @@ export class EditPlayerScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
-  }
-  shutdown() {
-    (this.scene.get("StartScene") as StartScene).createDomElements();
   }
 }

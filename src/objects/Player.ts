@@ -59,6 +59,9 @@ export class Player extends Phaser.GameObjects.Container {
     );
   }
   preUpdate() {
+    if (this.disabled) {
+      return;
+    }
     this.updatePlayerInZone();
   }
   moveToXY(x: number, y: number, { invert = false } = {}) {

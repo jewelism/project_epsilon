@@ -7,11 +7,9 @@ const GAME = {
   ZOOM: 2,
 };
 export class InGameScene extends Phaser.Scene {
-  cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   player: Player;
   obstacles: Phaser.Physics.Arcade.Group;
   safeZone: Phaser.Geom.Rectangle[];
-  socket: any;
   ws: CustomWebSocket;
   players: Player[] = [];
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
@@ -25,7 +23,6 @@ export class InGameScene extends Phaser.Scene {
 
   async create() {
     this.scene.launch("InGameUIScene");
-    this.cursors = this.input.keyboard.createCursorKeys();
     this.obstacles = this.physics.add.group();
 
     const {
@@ -64,10 +61,10 @@ export class InGameScene extends Phaser.Scene {
     if (!this.player) {
       return;
     }
+    if (this.player.disabled) {
+      return;
+    }
     if (!this.player.isPlayerInSafeZone()) {
-      if (this.player.disabled) {
-        return;
-      }
       this.player.disabled = true;
       this.ws.sendJson({
         uuid: this.player.uuid,
@@ -144,6 +141,9 @@ export class InGameScene extends Phaser.Scene {
       },
       dead: () => {
         player.playerDead(Number(data.x), Number(data.y));
+        if (this.players.every(({ disabled }) => disabled)) {
+          this.onGameOver();
+        }
       },
       resurrection: () => {
         player.playerResurrection(Number(data.x), Number(data.y));
@@ -212,22 +212,22 @@ export class InGameScene extends Phaser.Scene {
   playerPositionCorrection(serverData: {
     players: { x: number; y: number; uuid: string }[];
   }) {
-    serverData.players.forEach((player) => {
-      const foundPlayer = this.players.find(({ uuid }) => uuid === player.uuid);
+    serverData.players.forEach(({ x, y, uuid }) => {
+      const foundPlayer = this.players.find((p) => p.uuid === uuid);
+      const { x: foundPlayerX, y: foundPlayerY } = foundPlayer;
       if (
-        [
-          Math.abs(foundPlayer.x - player.x),
-          Math.abs(foundPlayer.y - player.y),
-        ].some((p) => p > 16)
+        [Math.abs(foundPlayerX - x), Math.abs(foundPlayerY - y)].some(
+          (p) => p > 16
+        )
       ) {
-        foundPlayer.setPosition(player.x, player.y);
+        foundPlayer.setPosition(x, y);
         console.log(
-          "위치보정:",
-          player.x,
-          player.y,
-          ", 원래위치:",
-          foundPlayer.x,
-          foundPlayer.y
+          "위치보정(서버):",
+          x,
+          y,
+          ", 원래위치(클라):",
+          foundPlayerX,
+          foundPlayerY
         );
       }
     });
@@ -254,6 +254,12 @@ export class InGameScene extends Phaser.Scene {
 
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
 
+    const movingObstacles = obstacleSpawnPoints.filter(
+      ({ properties }) =>
+        properties?.find(({ name }) => name === "isMove").value
+    );
+    this.createMovingObstacles(movingObstacles);
+
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     return {
@@ -264,9 +270,22 @@ export class InGameScene extends Phaser.Scene {
       obstacleSpawnPoints,
     };
   }
-  // createObstacle(obstacleSpawnPoints: Phaser.Types.Tilemaps.TiledObject[]) {
-  //   // obstacleSpawnPoints.forEach(({ x, y }) => {});
-  // }
+  onGameOver() {}
+  createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
+    movingObstacles.forEach(({ x, y, height, properties }) => {
+      const obstacle = this.add
+        .sprite(x, y - 16, "pixel_animals", 0)
+        .setOrigin(0, 0);
+      this.tweens.add({
+        targets: obstacle,
+        y: y + height,
+        duration:
+          properties?.find(({ name }) => name === "duration")?.value ?? 2000,
+        yoyo: true,
+        repeat: -1,
+      });
+    });
+  }
 
   constructor() {
     super("InGameScene");
