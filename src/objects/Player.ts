@@ -7,11 +7,9 @@ export class Player extends Phaser.GameObjects.Container {
   sprite: Phaser.Physics.Arcade.Sprite;
   frameNo: number;
   spriteKey: string;
-  direction: string;
 
   targetToMove: Phaser.Math.Vector2 | null = null;
   disabled = false;
-  oldPosition: undefined | { x: number; y: number };
   uuid: string;
   isMyPlayer: boolean;
   deadTweens: Phaser.Tweens.Tween;
@@ -22,16 +20,18 @@ export class Player extends Phaser.GameObjects.Container {
     invert: false,
   };
   isResurrecting = false;
+  inLobby = false;
 
   constructor(
     scene: Phaser.Scene,
-    { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer }
+    { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer, inLobby = false }
   ) {
     super(scene, x, y);
     this.uuid = uuid;
     this.isMyPlayer = isMyPlayer;
     this.frameNo = frameNo;
     this.spriteKey = spriteKey;
+    this.inLobby = inLobby;
 
     this.sprite = new Phaser.Physics.Arcade.Sprite(
       scene,
@@ -60,6 +60,10 @@ export class Player extends Phaser.GameObjects.Container {
     );
   }
   preUpdate() {
+    if (this.inLobby) {
+      this.stopWhenMouseTarget();
+      return;
+    }
     if (this.disabled) {
       return;
     }

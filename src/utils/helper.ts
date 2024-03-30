@@ -32,3 +32,19 @@ export const createFlashFn = () => {
     });
   };
 };
+
+export const mouseClickEffect = (
+  scene: Phaser.Scene,
+  pointer: Phaser.Input.Pointer
+) => {
+  let circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
+  scene.tweens.add({
+    targets: circle,
+    scaleX: 0.1,
+    scaleY: 0.1,
+    alpha: 0,
+    duration: 750,
+    ease: "Power2",
+    onComplete: () => circle.destroy(),
+  });
+};

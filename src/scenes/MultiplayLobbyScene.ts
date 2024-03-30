@@ -1,6 +1,8 @@
 import { Command } from "@tauri-apps/api/shell";
 import WebSocket from "tauri-plugin-websocket-api";
 import { TitleText } from "@/ui/TitleText";
+import { mouseClickEffect } from "@/utils/helper";
+import { Player } from "@/objects/Player";
 
 export interface CustomWebSocket extends WebSocket {
   uuid?: string;
@@ -9,7 +11,6 @@ export interface CustomWebSocket extends WebSocket {
 
 let removedListener = false;
 export class MultiplayLobbyScene extends Phaser.Scene {
-  cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   ws: CustomWebSocket;
   isHost: boolean;
   players: { uuid: string; nick: string; frameNo: number }[] = [];
@@ -18,26 +19,24 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   elements: Record<string, HTMLElement> = {};
   uuid: string;
   nick: string;
-  frameNo: any;
+  frameNo: number;
+  playersContainers: Player[];
 
   async create() {
     // if (this.isHost) {
     //   const command = Command.sidecar("server_epsilon");
     //   await command.spawn();
     // }
-
-    this.cursors = this.input.keyboard.createCursorKeys();
-
     const title = new TitleText(this, "Lobby");
     const element = this.add
-      .dom(title.x, title.y + 200)
+      .dom(title.x, title.y + 300)
       .createFromCache("multiplay_lobby_form");
     this.elements.playerInfoText = element.getChildByID(
       "playerInfoText"
     ) as HTMLInputElement;
     const startButton = element.getChildByID("start");
     startButton.addEventListener("click", () => {
-      this.ws.sendJson({ type: "start", hostUuid: this.uuid });
+      this.ws.sendJson({ type: "start" });
     });
     if (!this.isHost) {
       startButton.remove();
@@ -97,11 +96,12 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         },
         players: () => {
           this.players = data.players;
-          this.elements.playerInfoText.innerText = `${
-            this.players.length
-          } players: ${JSON.stringify(
-            this.players.map((p) => ({ nick: p.nick, frameNo: p.frameNo }))
-          )}`;
+          this.createPlayers();
+        },
+        move: () => {
+          this.playersContainers
+            .find(({ uuid }) => uuid === data.uuid)
+            ?.moveToXY(data.x, data.y);
         },
       };
       if (data.type in dataManager) {
@@ -126,6 +126,30 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     setInputValue(defaultValue);
     return { setInputValue, inputEl };
   }
+  createPlayers() {
+    this.playersContainers = this.players.map((player) => {
+      return new Player(this, {
+        x: Phaser.Math.Between(100, 400),
+        y: Phaser.Math.Between(300, 500),
+        nick: player.nick,
+        frameNo: player.frameNo,
+        spriteKey: "pixel_animals",
+        uuid: player.uuid,
+        isMyPlayer: player.uuid === this.uuid,
+        inLobby: true,
+      }).setScale(2);
+    });
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      mouseClickEffect(this, pointer);
+      this.ws.sendJson({
+        uuid: this.uuid,
+        type: "move",
+        x: pointer.worldX.toFixed(0),
+        y: pointer.worldY.toFixed(0),
+      });
+    });
+  }
+
   constructor() {
     super("MultiplayLobbyScene");
   }
@@ -138,6 +162,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   }
   preload() {
     this.load.html("multiplay_lobby_form", "phaser/multiplay_lobby_form.html");
-    // this.load.image('icon', 'phaser/icon.png');
+    this.load.spritesheet("pixel_animals", "phaser/pixel_animals.png", {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
   }
 }

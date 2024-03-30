@@ -2,7 +2,7 @@ import { Obstacle } from "@/objects/Obstacle";
 import { Player } from "@/objects/Player";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
-import { makeZone } from "@/utils/helper";
+import { makeZone, mouseClickEffect } from "@/utils/helper";
 
 const GAME = {
   ZOOM: 2,
@@ -52,7 +52,6 @@ export class InGameScene extends Phaser.Scene {
       },
       loop: true,
     });
-    // this.createObstacle(obstacleSpawnPoints);
   }
   update(_time: number, _delta: number): void {
     if (!this.player) {
@@ -91,7 +90,7 @@ export class InGameScene extends Phaser.Scene {
       });
     });
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.mouseClickEffect(this, pointer);
+      mouseClickEffect(this, pointer);
       if (this.player.disabled) {
         return;
       }
@@ -100,24 +99,11 @@ export class InGameScene extends Phaser.Scene {
       }
       this.ws.sendJson({
         uuid: this.player.uuid,
-        hostUuid: this.playersInfo[0].uuid,
         type: "move",
         x: pointer.worldX.toFixed(0),
         y: pointer.worldY.toFixed(0),
         invert: this.player.zone.invert,
       });
-    });
-  }
-  mouseClickEffect(scene: Phaser.Scene, pointer: Phaser.Input.Pointer) {
-    let circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
-    scene.tweens.add({
-      targets: circle,
-      scaleX: 0.1,
-      scaleY: 0.1,
-      alpha: 0,
-      duration: 750,
-      ease: "Power2",
-      onComplete: () => circle.destroy(),
     });
   }
   _updateResponse(value) {
