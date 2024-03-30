@@ -1,3 +1,4 @@
+import { KEYBOARD_KEYS } from "@/constants";
 import { Obstacle } from "@/objects/Obstacle";
 import { Player } from "@/objects/Player";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
@@ -5,7 +6,7 @@ import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
 import { makeZone, mouseClickEffect } from "@/utils/helper";
 
 const GAME = {
-  ZOOM: 2,
+  ZOOM: Number(localStorage.getItem("ZOOM")) || 2,
   RTT: 100,
 };
 export class InGameScene extends Phaser.Scene {
@@ -73,11 +74,6 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   onMyPlayerCreated() {
-    this.cameras.main
-      .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
-      .startFollow(this.player, false)
-      .setZoom(GAME.ZOOM);
-
     this.physics.add.overlap(this.obstacles, this.player, () => {
       if (this.player.disabled) {
         return;
@@ -161,8 +157,14 @@ export class InGameScene extends Phaser.Scene {
     this.playersInfo.forEach((player) => {
       const isMyPlayer = player.uuid === this.uuid;
       const newPlayer = new Player(this, {
-        x: this.playerSpawnPoints.x,
-        y: this.playerSpawnPoints.y,
+        x: Phaser.Math.Between(
+          this.playerSpawnPoints.x,
+          this.playerSpawnPoints.x + this.playerSpawnPoints.width - 16
+        ),
+        y: Phaser.Math.Between(
+          this.playerSpawnPoints.y,
+          this.playerSpawnPoints.y + this.playerSpawnPoints.height - 16
+        ),
         spriteKey: "pixel_animals",
         frameNo: player.frameNo,
         nick: player.nick,
@@ -175,6 +177,20 @@ export class InGameScene extends Phaser.Scene {
       }
       this.players.push(newPlayer);
     });
+    this.players
+      .sort((a) => (a.isMyPlayer ? -1 : 1))
+      .forEach((player, i) => {
+        this.input.keyboard.on(`keydown-${KEYBOARD_KEYS[i]}`, () => {
+          this.cameras.main
+            .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
+            .startFollow(player, false)
+            .setZoom(GAME.ZOOM);
+        });
+      });
+    this.cameras.main
+      .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
+      .startFollow(this.player, false)
+      .setZoom(GAME.ZOOM);
     const playersGroup = this.add.group(this.players.map((player) => player));
     this.physics.add.overlap(this.player, playersGroup, (player1) => {
       const player = player1 as Player;
@@ -320,10 +336,10 @@ export class InGameScene extends Phaser.Scene {
   onGameOver() {
     console.log("game over");
     this.scene.pause();
-    const inGameUIScene = this.scene.get("InGameUIScene");
-    // TODO: inGameUIScene에서 메소드만들고 game over text 띄우기.
-    // inGameUIScene.gameover
-    inGameUIScene.time.delayedCall(2000, () => {
+    const inGameUIScene = this.scene.get("InGameUIScene") as InGameUIScene;
+    inGameUIScene.gameoverTextOn();
+    inGameUIScene.time.delayedCall(3000, () => {
+      inGameUIScene.gameoverTextOff();
       this.shutdown();
       this.scene.restart();
     });

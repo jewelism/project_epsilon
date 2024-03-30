@@ -83,7 +83,7 @@
                  "type":"",
                  "visible":true,
                  "width":10,
-                 "x":169.00010357149,
+                 "x":174,
                  "y":109.101258393606
                 }, 
                 {
@@ -190,8 +190,8 @@
                  "type":"",
                  "visible":true,
                  "width":8,
-                 "x":321,
-                 "y":79
+                 "x":324,
+                 "y":75
                 }, 
                 {
                  "height":8,
@@ -215,6 +215,11 @@
                  "id":428,
                  "name":"ObstacleSpawn1",
                  "properties":[
+                        {
+                         "name":"duration",
+                         "type":"int",
+                         "value":750
+                        }, 
                         {
                          "name":"isMove",
                          "type":"bool",
@@ -2227,15 +2232,15 @@
          "name":"PlayerSpawn",
          "objects":[
                 {
-                 "height":15.7668363147339,
+                 "height":56.9267988965861,
                  "id":1,
                  "name":"PlayerSpawn1",
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":15.8827689346952,
-                 "x":31.9671091018257,
-                 "y":31.2284146523274
+                 "width":56.5081865479519,
+                 "x":27.1562043844663,
+                 "y":28.2884173250522
                 }],
          "opacity":1,
          "type":"objectgroup",

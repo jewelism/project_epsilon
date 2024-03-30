@@ -20,7 +20,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   uuid: string;
   nick: string;
   frameNo: number;
-  playersContainers: Player[];
+  playersContainers: Player[] = [];
 
   async create() {
     // if (this.isHost) {
@@ -95,8 +95,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
           removedListener = true;
         },
         players: () => {
-          this.players = data.players;
-          this.createPlayers();
+          this.createPlayers(data.players);
         },
         move: () => {
           this.playersContainers
@@ -126,19 +125,25 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     setInputValue(defaultValue);
     return { setInputValue, inputEl };
   }
-  createPlayers() {
-    this.playersContainers = this.players.map((player) => {
-      return new Player(this, {
-        x: Phaser.Math.Between(100, 400),
-        y: Phaser.Math.Between(300, 500),
-        nick: player.nick,
-        frameNo: player.frameNo,
-        spriteKey: "pixel_animals",
-        uuid: player.uuid,
-        isMyPlayer: player.uuid === this.uuid,
-        inLobby: true,
-      }).setScale(2);
-    });
+  createPlayers(players: { uuid: string; nick: string; frameNo: number }[]) {
+    const filtered = players
+      .filter((player) => !this.players.some((p) => p.uuid === player.uuid))
+      .map((player) => {
+        const newPlayer = new Player(this, {
+          x: Phaser.Math.Between(100, 400),
+          y: Phaser.Math.Between(300, 500),
+          nick: player.nick,
+          frameNo: player.frameNo,
+          spriteKey: "pixel_animals",
+          uuid: player.uuid,
+          isMyPlayer: player.uuid === this.uuid,
+          inLobby: true,
+        }).setScale(2);
+        this.playersContainers.push(newPlayer);
+      });
+    this.players = players;
+    console.log("filtered", filtered.length);
+
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       mouseClickEffect(this, pointer);
       this.ws.sendJson({
