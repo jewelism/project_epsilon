@@ -16,4 +16,12 @@ export const KEYBOARD_KEYS = [
   "SIX",
   "SEVEN",
   "EIGHT",
-];
+] as const;
+
+export const ZONE_KEYS = [
+  "safe",
+  "nonstop",
+  "straight",
+  "invert",
+  "clear",
+] as const;

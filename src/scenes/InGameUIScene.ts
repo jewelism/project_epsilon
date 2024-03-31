@@ -4,7 +4,7 @@ import { game } from "@/main";
 export class InGameUIScene extends Phaser.Scene {
   pingText: Phaser.GameObjects.Text;
   fpsText: Phaser.GameObjects.Text;
-  gameoverText: Phaser.GameObjects.Text;
+  centerText: Phaser.GameObjects.Text;
 
   create() {
     const { width } = this.scale;
@@ -24,16 +24,16 @@ export class InGameUIScene extends Phaser.Scene {
       loop: true,
     });
   }
-  gameoverTextOn() {
-    this.gameoverText = this.add
-      .text(this.scale.width / 2, this.scale.height / 2, "Game Over", {
+  centerTextOn(text: string) {
+    this.centerText = this.add
+      .text(this.scale.width / 2, this.scale.height / 2, text, {
         ...defaultTextStyle,
-        fontSize: "40px",
+        fontSize: "30px",
       })
       .setOrigin(0.5);
   }
-  gameoverTextOff() {
-    this.gameoverText.destroy();
+  centerTextOff() {
+    this.centerText.destroy();
   }
   constructor() {
     super("InGameUIScene");

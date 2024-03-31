@@ -1,28 +1,40 @@
-import { KEYBOARD_KEYS } from "@/constants";
+import { KEYBOARD_KEYS, ZONE_KEYS } from "@/constants";
 import { Obstacle } from "@/objects/Obstacle";
 import { Player } from "@/objects/Player";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
 import { makeZone, mouseClickEffect } from "@/utils/helper";
+import { signal } from "@preact/signals-core";
+
+type ZonePointsType = Record<
+  (typeof ZONE_KEYS)[number],
+  Phaser.Types.Tilemaps.TiledObject[]
+>;
 
 const GAME = {
+  TOTAL_STAGE: 2,
   ZOOM: Number(localStorage.getItem("ZOOM")) || 2,
   RTT: 100,
 };
+let wsListenerAlreadySet = false;
 export class InGameScene extends Phaser.Scene {
+  enableInGameListener = signal(true);
+  initialData: {
+    players: { uuid: string; nick: string; frameNo: number }[];
+    uuid: string;
+    ws: CustomWebSocket;
+    stage?: number;
+  };
   player: Player;
+  players: Player[] = [];
+  map: Phaser.Tilemaps.Tilemap;
+  playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   obstacles: Phaser.Physics.Arcade.Group;
   safeZone: Phaser.Geom.Rectangle[];
-  ws: CustomWebSocket;
-  players: Player[] = [];
-  playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
-  map: Phaser.Tilemaps.Tilemap;
-  isMultiplay: boolean;
-  playersInfo: { uuid: string; nick: string; frameNo: number }[];
-  uuid: string;
   nonstopZone: Phaser.Geom.Rectangle[];
   straightZone: Phaser.Geom.Rectangle[];
   invertZone: Phaser.Geom.Rectangle[];
+  clearZone: Phaser.Physics.Arcade.StaticGroup;
 
   async create() {
     this.scene.launch("InGameUIScene");
@@ -37,15 +49,22 @@ export class InGameScene extends Phaser.Scene {
     this.nonstopZone = makeZone(this, zonePoints.nonstop, 0x00ffff);
     this.straightZone = makeZone(this, zonePoints.straight, 0x00ffff);
     this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
+    this.clearZone = this.physics.add.staticGroup(
+      zonePoints.clear.map((cz) =>
+        this.add
+          .rectangle(cz.x, cz.y, cz.width, cz.height, 0xffffff, 0.5)
+          .setOrigin(0)
+      )
+    );
 
     await this.createSocketConnection();
     this.createPlayers();
     this.time.addEvent({
       delay: GAME.RTT,
       callback: () => {
-        this.ws.sendJson({
+        this.initialData.ws.sendJson({
           type: "rtt",
-          uuid: this.uuid,
+          uuid: this.initialData.uuid,
           timestamp: Date.now(),
           x: Number(this.player.x.toFixed(0)),
           y: Number(this.player.y.toFixed(0)),
@@ -65,7 +84,7 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
-      this.ws.sendJson({
+      this.initialData.ws.sendJson({
         uuid: this.player.uuid,
         type: "dead",
         x: this.player.x.toFixed(0),
@@ -78,7 +97,7 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
-      this.ws.sendJson({
+      this.initialData.ws.sendJson({
         uuid: this.player.uuid,
         type: "dead",
         x: this.player.x.toFixed(0),
@@ -93,7 +112,7 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.zone.straight) {
         return;
       }
-      this.ws.sendJson({
+      this.initialData.ws.sendJson({
         uuid: this.player.uuid,
         type: "move",
         x: pointer.worldX.toFixed(0),
@@ -101,8 +120,22 @@ export class InGameScene extends Phaser.Scene {
         invert: this.player.zone.invert,
       });
     });
+    this.physics.add.overlap(this.clearZone, this.player, () => {
+      if (this.player.disabled) {
+        return;
+      }
+      this.player.disabled = true;
+      this.initialData.ws.sendJson({
+        uuid: this.player.uuid,
+        nick: this.player.nick,
+        type: "clear",
+      });
+    });
   }
   _updateResponse(value) {
+    if (!this.enableInGameListener.value) {
+      return;
+    }
     let data;
     try {
       if (value?.type === "Ping") {
@@ -140,6 +173,9 @@ export class InGameScene extends Phaser.Scene {
           },
         });
       },
+      clear: () => {
+        this.onStageClear(player.nick);
+      },
       rtt: () => {
         (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
           `rtt: ${Date.now() - data.timestamp}`
@@ -154,8 +190,8 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   createPlayers() {
-    this.playersInfo.forEach((player) => {
-      const isMyPlayer = player.uuid === this.uuid;
+    this.initialData.players.forEach((player) => {
+      const isMyPlayer = player.uuid === this.initialData.uuid;
       const newPlayer = new Player(this, {
         x: Phaser.Math.Between(
           this.playerSpawnPoints.x,
@@ -197,7 +233,7 @@ export class InGameScene extends Phaser.Scene {
       if (!player.disabled) {
         return;
       }
-      this.ws.sendJson({
+      this.initialData.ws.sendJson({
         uuid: player.uuid,
         type: "resurrection",
         x: this.playerSpawnPoints.x,
@@ -207,7 +243,11 @@ export class InGameScene extends Phaser.Scene {
   }
   async createSocketConnection() {
     try {
-      this.ws.addListener(this._updateResponse.bind(this));
+      if (wsListenerAlreadySet) {
+        return;
+      }
+      this.initialData.ws.addListener(this._updateResponse.bind(this));
+      wsListenerAlreadySet = true;
     } catch (e) {
       console.error("jew ws connection failed");
     }
@@ -225,6 +265,9 @@ export class InGameScene extends Phaser.Scene {
   }) {
     serverData.players.forEach(({ x, y, uuid }) => {
       const foundPlayer = this.players.find((p) => p.uuid === uuid);
+      if (!foundPlayer) {
+        return;
+      }
       if (foundPlayer.isResurrecting) {
         return;
       }
@@ -248,22 +291,20 @@ export class InGameScene extends Phaser.Scene {
   }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
-      key: "map",
+      key: `map_${this.initialData.stage}`,
     });
     const bgTiles = map.addTilesetImage("ski", "ski_tiled_image");
     map.createLayer("bg", bgTiles);
     map.createLayer("bg_items", bgTiles);
 
     const playerSpawnPoints = map.findObject("PlayerSpawn", () => true);
-    const areaKeys = ["safe", "nonstop", "straight", "invert"] as const;
     const zonePoints = Object.fromEntries(
-      areaKeys.map((zone) => [
+      ZONE_KEYS.map((zone) => [
         zone,
         map.filterObjects(`${zone}Zone`, () => true) ?? [],
       ])
-    ) as Record<(typeof areaKeys)[number], Phaser.Types.Tilemaps.TiledObject[]>;
+    ) as ZonePointsType;
     const aliveZonePoints = Object.values(zonePoints).flat();
-
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
     const movingObstacles = obstacleSpawnPoints.filter(
       ({ properties }) =>
@@ -333,26 +374,57 @@ export class InGameScene extends Phaser.Scene {
       this.obstacles.add(obstacle);
     });
   }
-  onGameOver() {
-    console.log("game over");
-    this.scene.pause();
+  prepareNextStage(afterShutdown) {
+    this.scene.stop();
     const inGameUIScene = this.scene.get("InGameUIScene") as InGameUIScene;
-    inGameUIScene.gameoverTextOn();
-    inGameUIScene.time.delayedCall(3000, () => {
-      inGameUIScene.gameoverTextOff();
+    inGameUIScene.time.delayedCall(2500, () => {
+      inGameUIScene.centerTextOff();
       this.shutdown();
-      this.scene.restart();
+      afterShutdown();
+    });
+  }
+  onStageClear(clearNick: string) {
+    const inGameUIScene = this.scene.get("InGameUIScene") as InGameUIScene;
+    if (this.initialData.stage === GAME.TOTAL_STAGE) {
+      inGameUIScene.centerTextOn(`Final Stage Clear by ${clearNick}!`);
+      this.prepareNextStage(() => {
+        inGameUIScene.scene.start("StartScene");
+        inGameUIScene.scene.remove();
+      });
+      return;
+    } else {
+      inGameUIScene.centerTextOn(`Stage Clear by ${clearNick}!`);
+      this.prepareNextStage(() => {
+        inGameUIScene.scene.start("InGameScene", {
+          ...this.initialData,
+          stage: this.initialData.stage + 1,
+        });
+      });
+    }
+  }
+  onGameOver() {
+    const inGameUIScene = this.scene.get("InGameUIScene") as InGameUIScene;
+    inGameUIScene.centerTextOn("Game Over!");
+    this.prepareNextStage(() => {
+      this.scene.start("InGameScene");
     });
   }
   shutdown() {
+    this.player?.destroy();
+    this.player = null;
+    this.players.forEach((player) => player?.destroy());
     this.players = [];
+    this.scene.systems.shutdown();
   }
 
   constructor() {
     super("InGameScene");
   }
   preload() {
-    this.load.tilemapTiledJSON("map", "phaser/tiled/map_ex.json");
+    Array.from({ length: GAME.TOTAL_STAGE }, (_, i) => {
+      const mapName = `map_${i + 1}`;
+      this.load.tilemapTiledJSON(mapName, `phaser/tiled/${mapName}.json`);
+    });
     this.load.image("ski_tiled_image", "phaser/tiled/ski_tiled_image.png");
 
     this.load.spritesheet("pixel_animals", "phaser/pixel_animals.png", {
@@ -361,14 +433,11 @@ export class InGameScene extends Phaser.Scene {
     });
   }
   init(data: {
-    multi: boolean;
     players: { uuid: string; nick: string; frameNo: number }[];
     uuid: string;
     ws: CustomWebSocket;
+    stage?: number;
   }) {
-    this.playersInfo = data.players;
-    this.isMultiplay = data.multi;
-    this.uuid = data.uuid;
-    this.ws = data.ws;
+    this.initialData = data;
   }
 }

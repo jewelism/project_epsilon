@@ -43,14 +43,6 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     }
     await this.getSocketConnection();
   }
-  startGame() {
-    this.scene.start("InGameScene", {
-      multi: true,
-      players: this.players,
-      uuid: this.uuid,
-      ws: this.ws,
-    });
-  }
   async getSocketConnection() {
     const tryConnect = async () => {
       this.elements.playerInfoText.innerText = `try to connect...`;
@@ -126,9 +118,9 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     return { setInputValue, inputEl };
   }
   createPlayers(players: { uuid: string; nick: string; frameNo: number }[]) {
-    const filtered = players
+    players
       .filter((player) => !this.players.some((p) => p.uuid === player.uuid))
-      .map((player) => {
+      .forEach((player) => {
         const newPlayer = new Player(this, {
           x: Phaser.Math.Between(100, 400),
           y: Phaser.Math.Between(300, 500),
@@ -142,8 +134,6 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         this.playersContainers.push(newPlayer);
       });
     this.players = players;
-    console.log("filtered", filtered.length);
-
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       mouseClickEffect(this, pointer);
       this.ws.sendJson({
@@ -152,6 +142,15 @@ export class MultiplayLobbyScene extends Phaser.Scene {
         x: pointer.worldX.toFixed(0),
         y: pointer.worldY.toFixed(0),
       });
+    });
+  }
+  startGame() {
+    this.scene.start("InGameScene", {
+      multi: true,
+      players: this.players,
+      uuid: this.uuid,
+      ws: this.ws,
+      stage: 1,
     });
   }
 

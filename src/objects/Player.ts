@@ -21,6 +21,7 @@ export class Player extends Phaser.GameObjects.Container {
   };
   isResurrecting = false;
   inLobby = false;
+  nick: string = "";
 
   constructor(
     scene: Phaser.Scene,
@@ -28,6 +29,7 @@ export class Player extends Phaser.GameObjects.Container {
   ) {
     super(scene, x, y);
     this.uuid = uuid;
+    this.nick = nick;
     this.isMyPlayer = isMyPlayer;
     this.frameNo = frameNo;
     this.spriteKey = spriteKey;
