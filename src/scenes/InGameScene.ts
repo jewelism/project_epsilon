@@ -3,7 +3,11 @@ import { Obstacle } from "@/objects/Obstacle";
 import { Player } from "@/objects/Player";
 import { InGameUIScene } from "@/scenes/InGameUIScene";
 import { CustomWebSocket } from "@/scenes/MultiplayLobbyScene";
-import { makeZone, mouseClickEffect } from "@/utils/helper";
+import {
+  makeZone,
+  mouseClickEffect,
+  moveRandomlyWithinRange,
+} from "@/utils/helper";
 import { signal } from "@preact/signals-core";
 
 type ZonePointsType = Record<
@@ -293,7 +297,7 @@ export class InGameScene extends Phaser.Scene {
     const map = scene.make.tilemap({
       key: `map_${this.initialData.stage}`,
     });
-    const bgTiles = map.addTilesetImage("ski", "ski_tiled_image");
+    const bgTiles = map.addTilesetImage("ski_tiled", "ski_tiled");
     map.createLayer("bg", bgTiles);
     map.createLayer("bg_items", bgTiles);
 
@@ -306,15 +310,26 @@ export class InGameScene extends Phaser.Scene {
     ) as ZonePointsType;
     const aliveZonePoints = Object.values(zonePoints).flat();
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
-    const movingObstacles = obstacleSpawnPoints.filter(
+    const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
+      if (properties.find(({ name }) => name === "isRandomMove")) {
+        return false;
+      }
+      return properties?.find(({ name }) => name === "isMove")?.value;
+    });
+    const randomMovingObstacles = obstacleSpawnPoints.filter(
       ({ properties }) =>
-        properties?.find(({ name }) => name === "isMove").value
+        properties?.find(({ name }) => {
+          return name === "isRandomMove";
+        })?.value
     );
-    const stopObstacles = obstacleSpawnPoints.filter(
-      ({ properties }) =>
-        !properties?.find(({ name }) => name === "isMove").value
-    );
+    const stopObstacles = obstacleSpawnPoints.filter(({ properties }) => {
+      if (properties.find(({ name }) => name === "isRandomMove")) {
+        return false;
+      }
+      return !properties?.find(({ name }) => name === "isMove")?.value;
+    });
     this.createMovingObstacles(movingObstacles);
+    this.createRandomMoveObstacle(randomMovingObstacles);
     this.createStopObstacle(stopObstacles);
 
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -357,6 +372,30 @@ export class InGameScene extends Phaser.Scene {
           y: y + height,
         });
       }
+      this.obstacles.add(obstacle);
+    });
+  }
+  createRandomMoveObstacle(
+    randomMovingObstacles: Phaser.Types.Tilemaps.TiledObject[]
+  ) {
+    randomMovingObstacles.forEach(({ x, y, width, height, properties }) => {
+      const obstacle = new Obstacle(this, {
+        x,
+        y,
+        width: 10,
+        height: 8,
+        spriteKey: "pixel_animals",
+        frameNo: 3,
+      });
+      moveRandomlyWithinRange(
+        this,
+        obstacle,
+        x,
+        width,
+        y,
+        height,
+        properties.find(({ name }) => name === "duration").value
+      );
       this.obstacles.add(obstacle);
     });
   }
@@ -425,7 +464,7 @@ export class InGameScene extends Phaser.Scene {
       const mapName = `map_${i + 1}`;
       this.load.tilemapTiledJSON(mapName, `phaser/tiled/${mapName}.json`);
     });
-    this.load.image("ski_tiled_image", "phaser/tiled/ski_tiled_image.png");
+    this.load.image("ski_tiled", "phaser/tiled/ski_tiled.png");
 
     this.load.spritesheet("pixel_animals", "phaser/pixel_animals.png", {
       frameWidth: 16,
