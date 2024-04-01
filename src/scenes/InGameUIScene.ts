@@ -1,10 +1,12 @@
 import { defaultTextStyle } from "@/constants";
 import { game } from "@/main";
+import { InGameScene } from "@/scenes/InGameScene";
 
 export class InGameUIScene extends Phaser.Scene {
   pingText: Phaser.GameObjects.Text;
   fpsText: Phaser.GameObjects.Text;
   centerText: Phaser.GameObjects.Text;
+  toMainMenuText: Phaser.GameObjects.Text;
 
   create() {
     const { width } = this.scale;
@@ -23,6 +25,28 @@ export class InGameUIScene extends Phaser.Scene {
       },
       loop: true,
     });
+    this.input.keyboard.on(`keydown-ESC`, () => {
+      this.toggleMenu();
+    });
+  }
+  toggleMenu() {
+    if (this.toMainMenuText) {
+      this.toMainMenuText.destroy();
+      return;
+    }
+    this.toMainMenuText = this.add
+      .text(this.scale.width / 2, this.scale.height / 2, "Go to main", {
+        ...defaultTextStyle,
+        fontSize: "30px",
+      })
+      .setOrigin(0.5)
+      .setInteractive()
+      .on("pointerdown", () => {
+        const inGameScene = this.scene.get("InGameScene") as InGameScene;
+        inGameScene.initialData.ws.disconnect();
+        inGameScene.scene.start("StartScene");
+        this.scene.stop();
+      });
   }
   centerTextOn(text: string) {
     this.centerText = this.add

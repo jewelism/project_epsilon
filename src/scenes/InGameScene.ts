@@ -8,7 +8,6 @@ import {
   mouseClickEffect,
   moveRandomlyWithinRange,
 } from "@/utils/helper";
-import { signal } from "@preact/signals-core";
 
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
@@ -22,7 +21,6 @@ const GAME = {
 };
 let wsListenerAlreadySet = false;
 export class InGameScene extends Phaser.Scene {
-  enableInGameListener = signal(true);
   initialData: {
     players: { uuid: string; nick: string; frameNo: number }[];
     uuid: string;
@@ -137,9 +135,6 @@ export class InGameScene extends Phaser.Scene {
     });
   }
   _updateResponse(value) {
-    if (!this.enableInGameListener.value) {
-      return;
-    }
     let data;
     try {
       if (value?.type === "Ping") {
@@ -169,16 +164,28 @@ export class InGameScene extends Phaser.Scene {
       },
       resurrection: () => {
         player.playerResurrection(Number(data.x), Number(data.y));
-        player.isResurrecting = true;
-        this.time.addEvent({
-          delay: GAME.RTT + 10,
-          callback: () => {
-            player.isResurrecting = false;
-          },
-        });
+        this.ignoreRttCorrection(player);
       },
       clear: () => {
         this.onStageClear(player.nick);
+      },
+      players: () => {
+        const dataPlayerUuids = new Set(data.players.map(({ uuid }) => uuid));
+        this.players.forEach((player) => {
+          if (!dataPlayerUuids.has(player.uuid)) {
+            player.destroy();
+          }
+        });
+        this.players = this.players.filter((player) =>
+          dataPlayerUuids.has(player.uuid)
+        );
+        this.initialData.players = data.players.map(
+          ({ uuid, nick, frameNo }) => ({
+            uuid,
+            nick,
+            frameNo,
+          })
+        );
       },
       rtt: () => {
         (this.scene.get("InGameUIScene") as InGameUIScene).pingText.setText(
@@ -211,6 +218,7 @@ export class InGameScene extends Phaser.Scene {
         uuid: player.uuid,
         isMyPlayer,
       });
+      this.ignoreRttCorrection(newPlayer);
       if (isMyPlayer) {
         this.player = newPlayer;
         this.onMyPlayerCreated();
@@ -272,7 +280,7 @@ export class InGameScene extends Phaser.Scene {
       if (!foundPlayer) {
         return;
       }
-      if (foundPlayer.isResurrecting) {
+      if (foundPlayer.isIgnoreRttCorrection) {
         return;
       }
       const { x: foundPlayerX, y: foundPlayerY } = foundPlayer;
@@ -293,6 +301,15 @@ export class InGameScene extends Phaser.Scene {
       }
     });
   }
+  ignoreRttCorrection(player: Player) {
+    player.isIgnoreRttCorrection = true;
+    this.time.addEvent({
+      delay: GAME.RTT + 10,
+      callback: () => {
+        player.isIgnoreRttCorrection = false;
+      },
+    });
+  }
   createMap(scene: Phaser.Scene) {
     const map = scene.make.tilemap({
       key: `map_${this.initialData.stage}`,
@@ -310,24 +327,19 @@ export class InGameScene extends Phaser.Scene {
     ) as ZonePointsType;
     const aliveZonePoints = Object.values(zonePoints).flat();
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
-    const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
-      if (properties.find(({ name }) => name === "isRandomMove")) {
-        return false;
-      }
-      return properties?.find(({ name }) => name === "isMove")?.value;
-    });
-    const randomMovingObstacles = obstacleSpawnPoints.filter(
+    const movingObstacles = obstacleSpawnPoints.filter(
       ({ properties }) =>
-        properties?.find(({ name }) => {
-          return name === "isRandomMove";
-        })?.value
+        !properties.some(({ name }) => name === "isRandomMove") &&
+        properties.some(({ name }) => name === "isMove")
     );
-    const stopObstacles = obstacleSpawnPoints.filter(({ properties }) => {
-      if (properties.find(({ name }) => name === "isRandomMove")) {
-        return false;
-      }
-      return !properties?.find(({ name }) => name === "isMove")?.value;
-    });
+    const randomMovingObstacles = obstacleSpawnPoints.filter(({ properties }) =>
+      properties.some(({ name }) => name === "isRandomMove")
+    );
+    const stopObstacles = obstacleSpawnPoints.filter(
+      ({ properties }) =>
+        !properties.some(({ name }) => name === "isRandomMove") &&
+        !properties.some(({ name }) => name === "isMove")
+    );
     this.createMovingObstacles(movingObstacles);
     this.createRandomMoveObstacle(randomMovingObstacles);
     this.createStopObstacle(stopObstacles);

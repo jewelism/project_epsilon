@@ -22,7 +22,7 @@
          "encoding":"base64",
          "height":30,
          "id":15,
-         "name":"bg_item",
+         "name":"bg_items",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -296,33 +296,6 @@
                  "width":78.122516486405,
                  "x":16.8485965419916,
                  "y":224.261660744603
-                }, 
-                {
-                 "height":54.342173189124,
-                 "id":534,
-                 "name":"random_obstacle",
-                 "properties":[
-                        {
-                         "name":"duration",
-                         "type":"int",
-                         "value":2500
-                        }, 
-                        {
-                         "name":"isMove",
-                         "type":"bool",
-                         "value":true
-                        }, 
-                        {
-                         "name":"isRandomMove",
-                         "type":"bool",
-                         "value":true
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":64.9799137113802,
-                 "x":112.186218436248,
-                 "y":86.5876930839833
                 }],
          "opacity":1,
          "type":"objectgroup",
