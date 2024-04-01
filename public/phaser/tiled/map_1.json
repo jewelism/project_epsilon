@@ -45,6 +45,17 @@
                  "width":14.3615892527754,
                  "x":560.422737849353,
                  "y":47.101988815149
+                }, 
+                {
+                 "height":16.7216,
+                 "id":535,
+                 "name":"clearZone1",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":14.3616,
+                 "x":12.860767695962,
+                 "y":14.6498888361045
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -144,28 +155,6 @@
                  "width":16.0523,
                  "x":223.70335,
                  "y":36.5197333333333
-                }, 
-                {
-                 "height":40.4456,
-                 "id":526,
-                 "name":"obstacle",
-                 "properties":[
-                        {
-                         "name":"duration",
-                         "type":"int",
-                         "value":2500
-                        }, 
-                        {
-                         "name":"isMove",
-                         "type":"bool",
-                         "value":true
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16.0523,
-                 "x":131.173021121638,
-                 "y":43.7799226865167
                 }, 
                 {
                  "height":16.4225920487227,
@@ -436,7 +425,7 @@
          "y":0
         }],
  "nextlayerid":16,
- "nextobjectid":535,
+ "nextobjectid":536,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",

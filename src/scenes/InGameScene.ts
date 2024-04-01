@@ -327,19 +327,24 @@ export class InGameScene extends Phaser.Scene {
     ) as ZonePointsType;
     const aliveZonePoints = Object.values(zonePoints).flat();
     const obstacleSpawnPoints = map.filterObjects("ObstacleSpawn", () => true);
-    const movingObstacles = obstacleSpawnPoints.filter(
+    const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
+      if (properties.find(({ name }) => name === "isRandomMove")) {
+        return false;
+      }
+      return properties?.find(({ name }) => name === "isMove")?.value;
+    });
+    const randomMovingObstacles = obstacleSpawnPoints.filter(
       ({ properties }) =>
-        !properties.some(({ name }) => name === "isRandomMove") &&
-        properties.some(({ name }) => name === "isMove")
+        properties?.find(({ name }) => {
+          return name === "isRandomMove";
+        })?.value
     );
-    const randomMovingObstacles = obstacleSpawnPoints.filter(({ properties }) =>
-      properties.some(({ name }) => name === "isRandomMove")
-    );
-    const stopObstacles = obstacleSpawnPoints.filter(
-      ({ properties }) =>
-        !properties.some(({ name }) => name === "isRandomMove") &&
-        !properties.some(({ name }) => name === "isMove")
-    );
+    const stopObstacles = obstacleSpawnPoints.filter(({ properties }) => {
+      if (properties.find(({ name }) => name === "isRandomMove")) {
+        return false;
+      }
+      return !properties?.find(({ name }) => name === "isMove")?.value;
+    });
     this.createMovingObstacles(movingObstacles);
     this.createRandomMoveObstacle(randomMovingObstacles);
     this.createStopObstacle(stopObstacles);
