@@ -23,9 +23,9 @@ fn main() {
       //   "local2",
       //   tauri::WindowUrl::App("index.html".into())
       // ).build()?;
-        let window = app.get_window("main").unwrap();
+        // let window = app.get_window("main").unwrap();
         // let window2 = app.get_window("local").unwrap();
-        window.open_devtools();
+        // window.open_devtools();
         // window2.open_devtools();
       Ok(())
     })

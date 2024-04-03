@@ -14,12 +14,12 @@ type ZonePointsType = Record<
   Phaser.Types.Tilemaps.TiledObject[]
 >;
 
-const GAME = {
+export const GAME = {
   TOTAL_STAGE: 2,
   ZOOM: Number(localStorage.getItem("ZOOM")) || 2,
   RTT: 100,
+  enableGameWsListener: true,
 };
-let wsListenerAlreadySet = false;
 export class InGameScene extends Phaser.Scene {
   initialData: {
     players: { uuid: string; nick: string; frameNo: number }[];
@@ -39,6 +39,9 @@ export class InGameScene extends Phaser.Scene {
   clearZone: Phaser.Physics.Arcade.StaticGroup;
 
   async create() {
+    console.log("create InGameScene");
+
+    GAME.enableGameWsListener = true;
     this.scene.launch("InGameUIScene");
     this.obstacles = this.physics.add.group();
 
@@ -82,6 +85,8 @@ export class InGameScene extends Phaser.Scene {
     if (this.player.disabled) {
       return;
     }
+    console.log("update InGameScene", this.player);
+
     if (!this.player.isPlayerInSafeZone()) {
       if (this.player.disabled) {
         return;
@@ -135,6 +140,9 @@ export class InGameScene extends Phaser.Scene {
     });
   }
   _updateResponse(value) {
+    if (!GAME.enableGameWsListener) {
+      return;
+    }
     let data;
     try {
       if (value?.type === "Ping") {
@@ -179,6 +187,15 @@ export class InGameScene extends Phaser.Scene {
         this.players = this.players.filter((player) =>
           dataPlayerUuids.has(player.uuid)
         );
+        const newPlayers = data.players.filter(
+          ({ uuid }) => !this.players.some((player) => player.uuid === uuid)
+        );
+        if (newPlayers.length > 0) {
+          this.players = [
+            ...this.players,
+            ...newPlayers.map((player) => this.createPlayer(player)),
+          ];
+        }
         this.initialData.players = data.players.map(
           ({ uuid, nick, frameNo }) => ({
             uuid,
@@ -200,31 +217,35 @@ export class InGameScene extends Phaser.Scene {
       console.log("another type incoming: ", data);
     }
   }
+  createPlayer(player) {
+    return new Player(this, {
+      x: Phaser.Math.Between(
+        this.playerSpawnPoints.x,
+        this.playerSpawnPoints.x + this.playerSpawnPoints.width - 16
+      ),
+      y: Phaser.Math.Between(
+        this.playerSpawnPoints.y,
+        this.playerSpawnPoints.y + this.playerSpawnPoints.height - 16
+      ),
+      spriteKey: "pixel_animals",
+      frameNo: player.frameNo,
+      nick: player.nick,
+      uuid: player.uuid,
+      isMyPlayer: player.uuid === this.initialData.uuid,
+    });
+  }
   createPlayers() {
     this.initialData.players.forEach((player) => {
-      const isMyPlayer = player.uuid === this.initialData.uuid;
-      const newPlayer = new Player(this, {
-        x: Phaser.Math.Between(
-          this.playerSpawnPoints.x,
-          this.playerSpawnPoints.x + this.playerSpawnPoints.width - 16
-        ),
-        y: Phaser.Math.Between(
-          this.playerSpawnPoints.y,
-          this.playerSpawnPoints.y + this.playerSpawnPoints.height - 16
-        ),
-        spriteKey: "pixel_animals",
-        frameNo: player.frameNo,
-        nick: player.nick,
-        uuid: player.uuid,
-        isMyPlayer,
-      });
+      const newPlayer = this.createPlayer(player);
       this.ignoreRttCorrection(newPlayer);
-      if (isMyPlayer) {
+      if (newPlayer.isMyPlayer) {
         this.player = newPlayer;
         this.onMyPlayerCreated();
       }
       this.players.push(newPlayer);
     });
+    console.log("this.players", this.initialData.players, this.players);
+
     this.players
       .sort((a) => (a.isMyPlayer ? -1 : 1))
       .forEach((player, i) => {
@@ -255,11 +276,9 @@ export class InGameScene extends Phaser.Scene {
   }
   async createSocketConnection() {
     try {
-      if (wsListenerAlreadySet) {
-        return;
-      }
+      console.log("createSocketConnection");
+
       this.initialData.ws.addListener(this._updateResponse.bind(this));
-      wsListenerAlreadySet = true;
     } catch (e) {
       console.error("jew ws connection failed");
     }
@@ -497,3 +516,4 @@ export class InGameScene extends Phaser.Scene {
     this.initialData = data;
   }
 }
+// TODO: ws disconnect시 재접속 로직 추가

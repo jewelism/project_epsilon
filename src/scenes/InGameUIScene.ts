@@ -1,6 +1,6 @@
 import { defaultTextStyle } from "@/constants";
 import { game } from "@/main";
-import { InGameScene } from "@/scenes/InGameScene";
+import { GAME, InGameScene } from "@/scenes/InGameScene";
 
 export class InGameUIScene extends Phaser.Scene {
   pingText: Phaser.GameObjects.Text;
@@ -43,6 +43,9 @@ export class InGameUIScene extends Phaser.Scene {
       .setInteractive()
       .on("pointerdown", () => {
         const inGameScene = this.scene.get("InGameScene") as InGameScene;
+        inGameScene.initialData.ws.disconnect();
+        GAME.enableGameWsListener = false;
+
         inGameScene.initialData.ws.disconnect();
         inGameScene.scene.start("StartScene");
         this.scene.stop();

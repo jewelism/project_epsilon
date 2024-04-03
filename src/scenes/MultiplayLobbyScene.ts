@@ -21,8 +21,12 @@ export class MultiplayLobbyScene extends Phaser.Scene {
   nick: string;
   frameNo: number;
   playersContainers: Player[] = [];
+  alreadyStarted: boolean;
+
+  // TODO: 이미 시작된 게임이면, ingamescene으로 바로 이동시켜야함. 그리고 players broadcast를 해야함
 
   async create() {
+    removedListener = false;
     // if (this.isHost) {
     //   const command = Command.sidecar("server_epsilon");
     //   await command.spawn();
@@ -64,6 +68,8 @@ export class MultiplayLobbyScene extends Phaser.Scene {
 
     this.elements.playerInfoText.innerText = "waiting for players";
 
+    console.log("connected removedListener", removedListener);
+
     this.ws.addListener((value) => {
       if (removedListener) {
         return;
@@ -81,13 +87,16 @@ export class MultiplayLobbyScene extends Phaser.Scene {
             nick: this.nick,
             frameNo: this.frameNo,
           });
+          this.alreadyStarted = data.started;
         },
         start: () => {
           this.startGame();
-          removedListener = true;
         },
         players: () => {
           this.createPlayers(data.players);
+          if (this.alreadyStarted) {
+            this.startGame();
+          }
         },
         move: () => {
           this.playersContainers
@@ -145,6 +154,7 @@ export class MultiplayLobbyScene extends Phaser.Scene {
     });
   }
   startGame() {
+    removedListener = true;
     this.scene.start("InGameScene", {
       multi: true,
       players: this.players,

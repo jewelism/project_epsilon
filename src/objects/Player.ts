@@ -170,6 +170,8 @@ export class Player extends Phaser.GameObjects.Container {
     );
   }
   isPlayerInSafeZone() {
+    console.log("safezone", this.scene);
+
     return this.isPlayerInZone((this.scene as InGameScene).safeZone);
   }
   isPlayerInNonstopZone() {
