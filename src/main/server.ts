@@ -48,6 +48,9 @@ wss.on('connection', function connection(ws: CustomWebSocket) {
   ws.on('message', function (data) {
     const message = JSON.parse(data.toString());
     const messageManager = {
+      uuid: () => {
+        broadcast({ ...message, started });
+      },
       joinInLobby: () => {
         players.push({
           ws,
@@ -57,7 +60,7 @@ wss.on('connection', function connection(ws: CustomWebSocket) {
         });
         broadcastPlayers();
       },
-      start: () => {
+      gameStart: () => {
         started = true;
         broadcast(message);
       },

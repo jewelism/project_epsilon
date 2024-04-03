@@ -16,15 +16,12 @@ export function MultiplayLobby({
   ipAddrInput,
 }: MultiplayLobbyProps) {
   const [infoText, setInfoText] = useState('');
-  const [alreadyStarted, setAlreadyStarted] = useState(false);
-  const [players, setPlayers] = useState([]);
   const [gameStartLoading, setGameStartLoading] = useState(false);
+  let players = [];
+  let alreadyStarted = false;
 
   const onClickMultiplayStart = () => {
-    localStorage.setItem('players', JSON.stringify(players));
-    localStorage.setItem('stage', '1');
     window.ws.sendJson({ type: 'gameStart' });
-    setGameStartLoading(true);
   };
 
   const getSocketConnection = async () => {
@@ -41,6 +38,11 @@ export function MultiplayLobby({
         }
         const data = JSON.parse(event.data as any);
         const gameStart = () => {
+          setGameStartLoading(true);
+          console.log('gameStart', players);
+
+          localStorage.setItem('players', JSON.stringify(players));
+          localStorage.setItem('stage', '1');
           createGame();
           setGameStartLoading(false);
           closeMenuApp();
@@ -55,12 +57,14 @@ export function MultiplayLobby({
               nick: nickInput,
               frameNo,
             });
-            setAlreadyStarted(data.started);
+            alreadyStarted = data.started;
             console.log('uuid', data.uuid, data.started);
           },
           gameStart,
           players: () => {
-            createPlayers(data.players);
+            players = data.players;
+            console.log('players', data.players);
+
             if (alreadyStarted) {
               gameStart();
             }
@@ -76,10 +80,6 @@ export function MultiplayLobby({
     } catch (e) {
       setInfoText(`ws connection failed ${e}`);
     }
-  };
-
-  const createPlayers = (players: any) => {
-    setPlayers(players);
   };
 
   useEffect(() => {
