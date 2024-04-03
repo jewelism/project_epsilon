@@ -14,10 +14,7 @@ export function MainMenu({
     <div>
       <h1>Ice Escape</h1>
       <button type="button" onClick={() => onClickMultiplay(true)}>
-        Create Multiplayer
-      </button>
-      <button type="button" onClick={() => onClickMultiplay(false)}>
-        Join Multiplayer
+        Create Multiplayer(Host)
       </button>
       <br />
       <br />
@@ -44,6 +41,12 @@ export function MainMenu({
           {server}
         </button>
       ))}
+      <br />
+      <br />
+      <button type="button" onClick={() => onClickMultiplay(false)}>
+        Join Multiplayer
+      </button>
+      <br />
       <br />
       <button type="button" onClick={onClickEditProfile}>
         edit player

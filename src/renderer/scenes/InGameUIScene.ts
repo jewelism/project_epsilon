@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { defaultTextStyle } from '@/constants';
-import { game } from '@/index';
-import { GAME, InGameScene } from '@/scenes/InGameScene';
+import { openMenuApp, removeGame } from '@/index';
+import { type InGameScene } from '@/scenes/InGameScene';
 
 export class InGameUIScene extends Phaser.Scene {
   pingText: Phaser.GameObjects.Text;
@@ -48,12 +48,11 @@ export class InGameUIScene extends Phaser.Scene {
       .setInteractive()
       .on('pointerdown', () => {
         const inGameScene = this.scene.get('InGameScene') as InGameScene;
+        inGameScene.removeListeners();
         inGameScene.initialData.ws.close();
-        GAME.enableGameWsListener = false;
-
-        inGameScene.initialData.ws.close();
-        inGameScene.scene.start('StartScene');
         this.scene.stop();
+        removeGame();
+        openMenuApp();
       });
   }
 

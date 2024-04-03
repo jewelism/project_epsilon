@@ -1,4 +1,4 @@
-import { CustomWebSocket, createGame, menuAppRoot } from '@/index';
+import { CustomWebSocket, closeMenuApp, createGame } from '@/index';
 import { useEffect, useState } from 'react';
 import PixelAnimals from '@/public/pixel_animals.png';
 import { Sprite } from '@/views/Sprite';
@@ -21,6 +21,8 @@ export function MultiplayLobby({
   const [gameStartLoading, setGameStartLoading] = useState(false);
 
   const onClickMultiplayStart = () => {
+    localStorage.setItem('players', JSON.stringify(players));
+    localStorage.setItem('stage', '1');
     window.ws.sendJson({ type: 'gameStart' });
     setGameStartLoading(true);
   };
@@ -41,7 +43,7 @@ export function MultiplayLobby({
         const gameStart = () => {
           createGame();
           setGameStartLoading(false);
-          menuAppRoot.unmount();
+          closeMenuApp();
           window.ws.removeEventListener('message', wsMessageListener);
         };
         const dataManager = {
@@ -78,7 +80,6 @@ export function MultiplayLobby({
 
   const createPlayers = (players: any) => {
     setPlayers(players);
-    console.log('createPlayers', players);
   };
 
   useEffect(() => {

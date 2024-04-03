@@ -3,13 +3,17 @@ import { KEYBOARD_KEYS, ZONE_KEYS } from '@/constants';
 import { Obstacle } from '@/objects/Obstacle';
 import { Player } from '@/objects/Player';
 import { type InGameUIScene } from '@/scenes/InGameUIScene';
-import { CustomWebSocket } from '@/scenes/MultiplayLobbyScene';
+import { type CustomWebSocket } from '@/index';
 import {
   makeZone,
   mouseClickEffect,
   moveRandomlyWithinRange,
 } from '@/utils/helper';
 import Phaser from 'phaser';
+import PixelAnimals from '@/public/pixel_animals.png';
+import SkiTiled from '@/public/tiled/ski_tiled.png';
+import map1 from '@/public/tiled/map_1.json';
+import map2 from '@/public/tiled/map_2.json';
 
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
@@ -20,7 +24,6 @@ export const GAME = {
   TOTAL_STAGE: 2,
   ZOOM: Number(localStorage.getItem('ZOOM')) || 2,
   RTT: 100,
-  enableGameWsListener: true,
 };
 export class InGameScene extends Phaser.Scene {
   initialData: {
@@ -43,7 +46,6 @@ export class InGameScene extends Phaser.Scene {
   async create() {
     console.log('create InGameScene');
 
-    GAME.enableGameWsListener = true;
     this.scene.launch('InGameUIScene');
     this.obstacles = this.physics.add.group();
 
@@ -87,8 +89,6 @@ export class InGameScene extends Phaser.Scene {
     if (this.player.disabled) {
       return;
     }
-    console.log('update InGameScene', this.player);
-
     if (!this.player.isPlayerInSafeZone()) {
       if (this.player.disabled) {
         return;
@@ -141,10 +141,7 @@ export class InGameScene extends Phaser.Scene {
       });
     });
   }
-  _updateResponse(value) {
-    if (!GAME.enableGameWsListener) {
-      return;
-    }
+  wsResponse = (value) => {
     let data;
     try {
       if (value?.type === 'Ping') {
@@ -218,7 +215,7 @@ export class InGameScene extends Phaser.Scene {
     } else {
       console.log('another type incoming: ', data);
     }
-  }
+  };
   createPlayer(player) {
     return new Player(this, {
       x: Phaser.Math.Between(
@@ -276,11 +273,13 @@ export class InGameScene extends Phaser.Scene {
       });
     });
   }
+  removeListeners() {
+    this.initialData.ws.removeEventListener('message', this.wsResponse);
+  }
   async createSocketConnection() {
     try {
       console.log('createSocketConnection');
-
-      this.initialData.ws.addListener(this._updateResponse.bind(this));
+      this.initialData.ws.addEventListener('message', this.wsResponse);
     } catch (e) {
       console.error('jew ws connection failed');
     }
@@ -497,24 +496,25 @@ export class InGameScene extends Phaser.Scene {
     super('InGameScene');
   }
   preload() {
-    Array.from({ length: GAME.TOTAL_STAGE }, (_, i) => {
-      const mapName = `map_${i + 1}`;
-      this.load.tilemapTiledJSON(mapName, `phaser/tiled/${mapName}.json`);
-    });
-    this.load.image('ski_tiled', 'phaser/tiled/ski_tiled.png');
-
-    this.load.spritesheet('pixel_animals', 'phaser/pixel_animals.png', {
+    this.load.tilemapTiledJSON('map_1', map1);
+    this.load.tilemapTiledJSON('map_2', map2);
+    this.load.image('ski_tiled', SkiTiled);
+    this.load.spritesheet('pixel_animals', PixelAnimals, {
       frameWidth: 16,
       frameHeight: 16,
     });
   }
-  init(data: {
-    players: { uuid: string; nick: string; frameNo: number }[];
-    uuid: string;
-    ws: CustomWebSocket;
-    stage?: number;
-  }) {
-    this.initialData = data;
+  init(data) {
+    this.initialData = {
+      players: JSON.parse(localStorage.getItem('players') || '[]') as {
+        uuid: string;
+        nick: string;
+        frameNo: number;
+      }[],
+      ws: window.ws,
+      uuid: localStorage.getItem('uuid') || '',
+      stage: data.stage || Number(localStorage.getItem('stage')) || 1,
+    };
   }
 }
 // TODO: ws disconnect시 재접속 로직 추가

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-mutable-exports */
 import { createRoot } from 'react-dom/client';
 import Phaser from 'phaser';
 import 'normalize.css';
@@ -20,8 +21,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [InGameScene, InGameUIScene],
   title: 'project epsilon',
   url: 'jewelism.github.io',
-  // type: Phaser.WEBGL,
-  // type: Phaser.CANVAS,
+  type: Phaser.WEBGL,
   scale: {
     mode: Phaser.Scale.FIT,
     // mode: Phaser.Scale.RESIZE,
@@ -56,14 +56,25 @@ const config: Phaser.Types.Core.GameConfig = {
   //   forceSetTimeOut: true,
   // },
 };
-
-console.log(window.electron.ipcRenderer);
-export const createGame = () => new Phaser.Game(config);
-
+export const APP = {
+  menu: null,
+  game: null,
+};
 const container = document.getElementById('root') as HTMLElement;
-export const menuAppRoot = createRoot(container);
-menuAppRoot.render(<Start />);
-
+export const openMenuApp = () => {
+  const root = createRoot(container);
+  APP.menu = root;
+  APP.menu.render(<Start />);
+};
+openMenuApp();
+export const closeMenuApp = () => APP.menu.unmount();
+export const createGame = () => {
+  APP.game = new Phaser.Game(config);
+};
+export const removeGame = () => {
+  APP.game.destroy(true);
+  APP.game = null;
+};
 // calling IPC exposed from preload script
 // window.electron.ipcRenderer.once('ipc-example', (arg) => {
 //   // eslint-disable-next-line no-console
