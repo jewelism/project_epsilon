@@ -1,0 +1,34 @@
+h1 {
+  text-align: center;
+  background-color: #fff;
+}
+input {
+  width: 100%;
+  max-width: 300px;
+  height: 30px;
+  font-size: 20px;
+  background-color: #fff;
+}
+#menu_app {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+}
+.flex-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.char_boxes_wrap {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  min-width: calc(16 * 3 * 4px);
+  max-width: calc(16 * 3 * 8px);
+}
