@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MainMenu } from '@/views/MainMenu';
 import EditProfile from '@/views/EditProfile';
 import { MultiplayLobby } from '@/views/MultiplayLobby';
@@ -9,6 +9,7 @@ export function Start() {
   const [ipAddrInput, setIpAddrInput] = useState(
     localStorage.getItem('ipAddrInput') || 'localhost',
   );
+  const [portInput, setPortInput] = useState(20058);
   const [nickInput, setNickInput] = useState(
     localStorage.getItem('nick') || '',
   );
@@ -18,9 +19,13 @@ export function Start() {
   const [isHost, setIsHost] = useState(false);
 
   const onClickMultiplay = (host: boolean) => {
-    localStorage.setItem('ipAddrInput', ipAddrInput);
+    if (host) {
+      setIpAddrInput('localhost');
+      window.electron.ipcRenderer.sendMessage('server', portInput);
+    }
     setIsHost(host);
     setCurrentView('MultiplayLobby');
+    localStorage.setItem('ipAddrInput', ipAddrInput);
   };
   const onClickSaveProfile = () => {
     localStorage.setItem('nick', nickInput);
@@ -31,16 +36,14 @@ export function Start() {
     setCurrentView('MainMenu');
   };
 
-  useEffect(() => {
-    localStorage.setItem('ipAddrInput', ipAddrInput);
-  }, [ipAddrInput]);
-
   return (
     <div id="menu_app">
       {currentView === 'MainMenu' && (
         <MainMenu
           ipAddrInput={ipAddrInput}
           setIpAddrInput={setIpAddrInput}
+          portInput={portInput}
+          setPortInput={setPortInput}
           onClickMultiplay={onClickMultiplay}
           onClickEditProfile={() => {
             setCurrentView('EditProfile');
@@ -63,6 +66,7 @@ export function Start() {
           nickInput={nickInput}
           frameNo={frameNo}
           ipAddrInput={ipAddrInput}
+          portInput={portInput}
         />
       )}
     </div>

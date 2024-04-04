@@ -14,7 +14,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import './server';
+import { server } from './server';
 
 class AppUpdater {
   constructor() {
@@ -49,11 +49,16 @@ const mainWindowOptions = {
 let mainWindow: BrowserWindow | null = null;
 let window2: BrowserWindow | null = null;
 
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ipcMain.once('server', async (_event, arg) => {
+  console.log('ipc-server', arg);
+  server({ port: arg });
 });
+// ipcMain.on('ipc-example', async (event, arg) => {
+//   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
+//   console.log(msgTemplate(arg));
+//   event.reply('ipc-example', msgTemplate('pong'));
+// });
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');

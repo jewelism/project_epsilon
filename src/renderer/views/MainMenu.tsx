@@ -1,12 +1,16 @@
 type MainMenuProps = {
   ipAddrInput: string;
   setIpAddrInput: (value: string) => void;
+  portInput: number;
+  setPortInput: (value: number) => void;
   onClickMultiplay: (isHost: boolean) => void;
   onClickEditProfile: () => void;
 };
 export function MainMenu({
   ipAddrInput,
   setIpAddrInput,
+  portInput,
+  setPortInput,
   onClickMultiplay,
   onClickEditProfile,
 }: MainMenuProps) {
@@ -31,14 +35,31 @@ export function MainMenu({
           setIpAddrInput('');
         }}
       />
+      <input
+        type="number"
+        name="portInput"
+        placeholder="enter ip address"
+        maxLength={30}
+        value={portInput}
+        onChange={({ target }) => {
+          setPortInput(target.valueAsNumber);
+        }}
+        style={{ width: '80px', height: '20px', fontSize: '15px' }}
+      />
       <br />
-      {['localhost', 'jewelry.tplinkdns.com'].map((server) => (
+      {[
+        { ip: 'localhost', port: 20058 },
+        { ip: 'jewelry.tplinkdns.com', port: 20058 },
+      ].map((server) => (
         <button
-          key={server}
+          key={server.ip}
           type="button"
-          onClick={() => setIpAddrInput(server)}
+          onClick={() => {
+            setIpAddrInput(server.ip);
+            setPortInput(server.port);
+          }}
         >
-          {server}
+          {server.ip}:{server.port}
         </button>
       ))}
       <br />
