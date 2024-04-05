@@ -16,6 +16,7 @@ module.exports = {
     'import/prefer-default-export': 'off',
     'lines-between-class-members': 'off',
     'jsx-props-no-spreading': 'off',
+    'no-console': 'off',
   },
   parserOptions: {
     ecmaVersion: 2022,

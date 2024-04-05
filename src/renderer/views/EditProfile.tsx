@@ -8,7 +8,6 @@ type EditProfileProps = {
   frameNo: number;
   setFrameNo: (value: number) => void;
   onClickSaveProfile: () => void;
-  onClickCancelProfile: () => void;
 };
 function EditProfile({
   nickInput,
@@ -16,7 +15,6 @@ function EditProfile({
   frameNo,
   setFrameNo,
   onClickSaveProfile,
-  onClickCancelProfile,
 }: EditProfileProps) {
   const onClickChar = ({ frameNo: fno }) => {
     setFrameNo(fno);
@@ -45,9 +43,6 @@ function EditProfile({
         <div>
           <button type="button" onClick={onClickSaveProfile}>
             OK
-          </button>
-          <button type="button" onClick={onClickCancelProfile}>
-            Cancel
           </button>
         </div>
       </div>

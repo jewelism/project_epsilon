@@ -1,15 +1,16 @@
-import { useState } from 'react';
+/* eslint-disable import/no-cycle */
+import { useEffect, useState } from 'react';
 import { MainMenu } from '@/views/MainMenu';
 import EditProfile from '@/views/EditProfile';
 import { MultiplayLobby } from '@/views/MultiplayLobby';
 import './index.css';
 
-export function Start() {
+export function Main() {
   const [currentView, setCurrentView] = useState('MainMenu');
   const [ipAddrInput, setIpAddrInput] = useState(
     localStorage.getItem('ipAddrInput') || 'localhost',
   );
-  const [portInput, setPortInput] = useState(20058);
+  const [servingPortInput, setServingPortInput] = useState('');
   const [nickInput, setNickInput] = useState(
     localStorage.getItem('nick') || '',
   );
@@ -21,7 +22,10 @@ export function Start() {
   const onClickMultiplay = (host: boolean) => {
     if (host) {
       setIpAddrInput('localhost');
-      window.electron.ipcRenderer.sendMessage('server', portInput);
+      window.electron.ipcRenderer.sendMessage(
+        'server',
+        Number(servingPortInput) || 20058,
+      );
     }
     setIsHost(host);
     setCurrentView('MultiplayLobby');
@@ -32,19 +36,24 @@ export function Start() {
     localStorage.setItem('frameNo', frameNo.toString());
     setCurrentView('MainMenu');
   };
-  const onClickCancelProfile = () => {
-    setCurrentView('MainMenu');
-  };
+
+  useEffect(() => {
+    if (!nickInput) {
+      setCurrentView('EditProfile');
+    }
+  }, [nickInput]);
 
   return (
     <div id="menu_app">
       {currentView === 'MainMenu' && (
         <MainMenu
-          ipAddrInput={ipAddrInput}
-          setIpAddrInput={setIpAddrInput}
-          portInput={portInput}
-          setPortInput={setPortInput}
-          onClickMultiplay={onClickMultiplay}
+          {...{
+            ipAddrInput,
+            setIpAddrInput,
+            servingPortInput,
+            setServingPortInput,
+            onClickMultiplay,
+          }}
           onClickEditProfile={() => {
             setCurrentView('EditProfile');
           }}
@@ -57,7 +66,6 @@ export function Start() {
           frameNo={frameNo}
           setFrameNo={setFrameNo}
           onClickSaveProfile={onClickSaveProfile}
-          onClickCancelProfile={onClickCancelProfile}
         />
       )}
       {currentView === 'MultiplayLobby' && (
@@ -66,7 +74,7 @@ export function Start() {
           nickInput={nickInput}
           frameNo={frameNo}
           ipAddrInput={ipAddrInput}
-          portInput={portInput}
+          servingPortInput={servingPortInput}
         />
       )}
     </div>

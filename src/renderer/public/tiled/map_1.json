@@ -54,8 +54,8 @@
                  "type":"",
                  "visible":true,
                  "width":14.3616,
-                 "x":10.5106703347856,
-                 "y":23.7145500863563
+                 "x":10.7835216308293,
+                 "y":8.70772880395521
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -272,7 +272,7 @@
                         {
                          "name":"duration",
                          "type":"int",
-                         "value":2500
+                         "value":1750
                         }, 
                         {
                          "name":"isRandomMove",

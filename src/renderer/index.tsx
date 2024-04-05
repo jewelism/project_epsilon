@@ -1,10 +1,11 @@
+/* eslint-disable import/no-cycle */
 /* eslint-disable import/no-mutable-exports */
 import { createRoot } from 'react-dom/client';
 import Phaser from 'phaser';
 import 'normalize.css';
 import { InGameScene } from '@/scenes/InGameScene';
 import { InGameUIScene } from '@/scenes/InGameUIScene';
-import { Start } from '@/views/Start';
+import { Main } from '@/views/Main';
 
 export interface CustomWebSocket extends WebSocket {
   uuid?: string;
@@ -19,7 +20,6 @@ declare global {
 
 const config: Phaser.Types.Core.GameConfig = {
   scene: [InGameScene, InGameUIScene],
-  title: 'project epsilon',
   url: 'jewelism.github.io',
   type: Phaser.WEBGL,
   scale: {
@@ -28,16 +28,6 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: window.innerWidth,
     height: window.innerHeight,
-    // width: Number(import.meta.env.RENDERER_VITE_WINDOW_WIDTH),
-    // height: Number(import.meta.env.RENDERER_VITE_WINDOW_HEIGHT),
-    // min: {
-    //   width: 480 * 2,
-    //   height: 270 * 2,
-    // },
-    // max: {
-    //   width: 1920,
-    //   height: 1080,
-    // },
   },
   physics: {
     default: 'arcade',
@@ -64,7 +54,7 @@ const container = document.getElementById('root') as HTMLElement;
 export const openMenuApp = () => {
   const root = createRoot(container);
   APP.menu = root;
-  APP.menu.render(<Start />);
+  APP.menu.render(<Main />);
 };
 openMenuApp();
 export const closeMenuApp = () => APP.menu.unmount();
@@ -75,12 +65,3 @@ export const removeGame = () => {
   APP.game.destroy(true);
   APP.game = null;
 };
-// calling IPC exposed from preload script
-// window.electron.ipcRenderer.once('ipc-example', (arg) => {
-//   // eslint-disable-next-line no-console
-//   console.log(arg);
-// });
-// window.electron.ipcRenderer.once('ipc-example', (arg) => {
-//   // eslint-disable-next-line no-console
-//   console.log(arg);
-// });

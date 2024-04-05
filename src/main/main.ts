@@ -51,7 +51,6 @@ let window2: BrowserWindow | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 ipcMain.once('server', async (_event, arg) => {
-  console.log('ipc-server', arg);
   server({ port: arg });
 });
 // ipcMain.on('ipc-example', async (event, arg) => {

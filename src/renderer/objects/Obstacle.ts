@@ -1,8 +1,10 @@
+import Phaser from 'phaser';
+
 export class Obstacle extends Phaser.GameObjects.Container {
   sprite: Phaser.GameObjects.Sprite;
   constructor(
     scene: Phaser.Scene,
-    { x, y, width, height, spriteKey, frameNo }
+    { x, y, width, height, spriteKey, frameNo },
   ) {
     super(scene, x, y);
     this.sprite = new Phaser.GameObjects.Sprite(
@@ -10,7 +12,7 @@ export class Obstacle extends Phaser.GameObjects.Container {
       0,
       0,
       spriteKey,
-      frameNo
+      frameNo,
     );
     this.add(this.sprite);
     this.setSize(width, height);

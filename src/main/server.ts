@@ -51,7 +51,7 @@ export const server = ({ port }) => {
       }
       broadcastPlayers();
     });
-    ws.on('message', function (data) {
+    ws.on('message', (data) => {
       const message = JSON.parse(data.toString());
       const messageManager = {
         uuid: () => {
@@ -81,6 +81,9 @@ export const server = ({ port }) => {
             timestamp: message.timestamp,
             players,
           });
+        },
+        move: () => {
+          broadcast(message);
         },
       };
       if (message.type in messageManager) {

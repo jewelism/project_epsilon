@@ -82,7 +82,7 @@ export class InGameScene extends Phaser.Scene {
       loop: true,
     });
   }
-  update(_time: number, _delta: number): void {
+  update(): void {
     if (!this.player) {
       return;
     }
@@ -178,21 +178,19 @@ export class InGameScene extends Phaser.Scene {
       },
       players: () => {
         const dataPlayerUuids = new Set(data.players.map(({ uuid }) => uuid));
-        this.players.forEach((player) => {
-          if (!dataPlayerUuids.has(player.uuid)) {
-            player.destroy();
+        this.players.forEach((p) => {
+          if (!dataPlayerUuids.has(p.uuid)) {
+            p.destroy();
           }
         });
-        this.players = this.players.filter((player) =>
-          dataPlayerUuids.has(player.uuid),
-        );
+        this.players = this.players.filter((p) => dataPlayerUuids.has(p.uuid));
         const newPlayers = data.players.filter(
-          ({ uuid }) => !this.players.some((player) => player.uuid === uuid),
+          ({ uuid }) => !this.players.some((p) => p.uuid === uuid),
         );
         if (newPlayers.length > 0) {
           this.players = [
             ...this.players,
-            ...newPlayers.map((player) => this.createPlayer(player)),
+            ...newPlayers.map((p) => this.createPlayer(p)),
           ];
         }
         this.initialData.players = data.players.map(
@@ -285,9 +283,9 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   isPlayerInZone(zone: Phaser.Geom.Rectangle[]) {
-    return zone.some((zone) =>
+    return zone.some((z) =>
       Phaser.Geom.Rectangle.ContainsPoint(
-        zone,
+        z,
         new Phaser.Geom.Point(this.player.x, this.player.y),
       ),
     );

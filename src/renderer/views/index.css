@@ -9,6 +9,10 @@ input {
   font-size: 20px;
   background-color: #fff;
 }
+p {
+  text-align: center;
+  background-color: #fff;
+}
 #menu_app {
   display: flex;
   justify-content: center;
@@ -22,6 +26,9 @@ input {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.row {
+  flex-direction: row;
 }
 .char_boxes_wrap {
   display: flex;
