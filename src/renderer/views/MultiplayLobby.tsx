@@ -29,8 +29,8 @@ export function MultiplayLobby({
 
   const gameStart = (receivedPlayers) => {
     setGameStartLoading(true);
-    localStorage.setItem('players', JSON.stringify(receivedPlayers));
-    localStorage.setItem('stage', '1');
+    window.electron.store.set('players', JSON.stringify(receivedPlayers));
+    window.electron.store.set('stage', '1');
     createGame();
     setGameStartLoading(false);
     closeMenuApp();
@@ -40,7 +40,7 @@ export function MultiplayLobby({
 
   const dataManager = {
     uuid: (data) => {
-      localStorage.setItem('uuid', data.uuid);
+      window.electron.store.set('uuid', data.uuid);
       window.ws.sendJson({
         type: 'joinInLobby',
         uuid: data.uuid,

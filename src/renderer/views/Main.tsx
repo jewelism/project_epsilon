@@ -8,14 +8,14 @@ import './index.css';
 export function Main() {
   const [currentView, setCurrentView] = useState('MainMenu');
   const [ipAddrInput, setIpAddrInput] = useState(
-    localStorage.getItem('ipAddrInput') || 'localhost',
+    window.electron.store.get('ipAddrInput') || 'localhost',
   );
   const [servingPortInput, setServingPortInput] = useState('');
   const [nickInput, setNickInput] = useState(
-    localStorage.getItem('nick') || '',
+    window.electron.store.get('nick') || '',
   );
   const [frameNo, setFrameNo] = useState(
-    parseInt(localStorage.getItem('frameNo') || '0', 10),
+    parseInt(window.electron.store.get('frameNo') || '0', 10),
   );
   const [isHost, setIsHost] = useState(false);
 
@@ -29,11 +29,11 @@ export function Main() {
     }
     setIsHost(host);
     setCurrentView('MultiplayLobby');
-    localStorage.setItem('ipAddrInput', ipAddrInput);
+    window.electron.store.set('ipAddrInput', ipAddrInput);
   };
   const onClickSaveProfile = () => {
-    localStorage.setItem('nick', nickInput);
-    localStorage.setItem('frameNo', frameNo.toString());
+    window.electron.store.set('nick', nickInput);
+    window.electron.store.set('frameNo', frameNo.toString());
     setCurrentView('MainMenu');
   };
 

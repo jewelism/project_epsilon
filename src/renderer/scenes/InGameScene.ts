@@ -22,7 +22,7 @@ type ZonePointsType = Record<
 
 export const GAME = {
   TOTAL_STAGE: 2,
-  ZOOM: Number(localStorage.getItem('ZOOM')) || 2,
+  ZOOM: Number(window.electron.store.get('ZOOM')) || 2,
   RTT: 100,
 };
 export class InGameScene extends Phaser.Scene {
@@ -504,14 +504,14 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data) {
     this.initialData = {
-      players: JSON.parse(localStorage.getItem('players') || '[]') as {
+      players: JSON.parse(window.electron.store.get('players') || '[]') as {
         uuid: string;
         nick: string;
         frameNo: number;
       }[],
       ws: window.ws,
-      uuid: localStorage.getItem('uuid') || '',
-      stage: data.stage || Number(localStorage.getItem('stage')) || 1,
+      uuid: window.electron.store.get('uuid') || '',
+      stage: data.stage || Number(window.electron.store.get('stage')) || 1,
     };
   }
 }
