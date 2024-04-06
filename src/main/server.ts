@@ -26,10 +26,15 @@ export const server = ({ port }) => {
   wss.on('connection', function connection(ws: CustomWebSocket) {
     ws.uuid = uuidv4();
 
-    ws.sendJson = (data: Record<string, any>) =>
-      ws.send(JSON.stringify(data), {
-        binary: false,
-      });
+    ws.sendJson = (data: Record<string, any>) => {
+      try {
+        ws.send(JSON.stringify(data), {
+          binary: false,
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    };
 
     ws.sendJson({
       type: 'uuid',
@@ -38,7 +43,6 @@ export const server = ({ port }) => {
       started,
     });
     ws.isAlive = true;
-    // ws.sendJson({ type: 'players', players: getPlayersForClient() });
     ws.on('pong', () => {
       ws.isAlive = true;
     });
@@ -52,45 +56,16 @@ export const server = ({ port }) => {
       broadcastPlayers();
     });
     ws.on('message', (data) => {
-      const message = JSON.parse(data.toString());
-      const messageManager = {
-        uuid: () => {
-          broadcast({ ...message, started });
-        },
-        joinInLobby: () => {
-          players.push({
-            ws,
-            uuid: message.uuid,
-            nick: message.nick,
-            frameNo: message.frameNo,
-          });
-          broadcastPlayers();
-        },
-        gameStart: () => {
-          started = true;
+      try {
+        const message = JSON.parse(data.toString());
+        if (message.type in messageManager) {
+          messageManager[message.type]({ message, ws });
+        } else {
+          console.log('Unknown message type', message.type, players.length);
           broadcast(message);
-        },
-        rtt: () => {
-          const player = findPlayerByUuid(message.uuid);
-          player.x = message.x;
-          player.y = message.y;
-
-          ws.sendJson({
-            type: 'rtt',
-            uuid: ws.uuid,
-            timestamp: message.timestamp,
-            players,
-          });
-        },
-        move: () => {
-          broadcast(message);
-        },
-      };
-      if (message.type in messageManager) {
-        messageManager[message.type]();
-      } else {
-        console.log('Unknown message type', message.type, players.length);
-        broadcast(message);
+        }
+      } catch (error) {
+        console.error(error);
       }
     });
   });
@@ -109,6 +84,40 @@ export const server = ({ port }) => {
   }, 10000);
   console.log(`Server is running on port ${port}`);
 
+  const messageManager = {
+    uuid: ({ message }) => {
+      broadcast({ ...message, started });
+    },
+    joinInLobby: ({ ws, message }) => {
+      players.push({
+        ws,
+        uuid: message.uuid,
+        nick: message.nick,
+        frameNo: message.frameNo,
+      });
+      broadcastPlayers();
+    },
+    gameStart: ({ message }) => {
+      started = true;
+      broadcast(message);
+    },
+    rtt: ({ ws, message }) => {
+      const player = findPlayerByUuid(message.uuid);
+      player.x = message.x;
+      player.y = message.y;
+
+      ws.sendJson({
+        type: 'rtt',
+        uuid: ws.uuid,
+        timestamp: message.timestamp,
+        players,
+      });
+    },
+    move: ({ message }) => {
+      broadcast(message);
+    },
+  };
+
   const findPlayerWsByUuid = (uuid: string) => {
     let playerWs: CustomWebSocket | null = null;
     wss.clients.forEach((client: CustomWebSocket) => {
@@ -122,9 +131,9 @@ export const server = ({ port }) => {
     return players.find((player) => player.uuid === uuid);
   }
   function broadcast(data: Record<string, any>) {
-    wss.clients.forEach((client) => {
+    wss.clients.forEach((client: CustomWebSocket) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data), { binary: false });
+        client.sendJson(data);
       }
     });
   }
