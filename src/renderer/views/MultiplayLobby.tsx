@@ -24,6 +24,7 @@ export function MultiplayLobby({
   let alreadyStarted = false;
 
   const onClickMultiplayStart = () => {
+    setGameStartLoading(true);
     window.ws.sendJson({ type: 'gameStart', players });
   };
 
@@ -110,7 +111,10 @@ export function MultiplayLobby({
   return (
     <div className="flex-center">
       <h1>MultiplayLobby</h1>
-      <p>server: {ipAddrInput}</p>
+      <p>
+        server: {ipAddrInput}
+        {isHost ? `:${servingPortInput || 20058}` : ''}
+      </p>
       <p>{infoText}</p>
       <div className="char_boxes_wrap">
         {players.map((player) => (

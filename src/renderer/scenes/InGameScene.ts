@@ -141,6 +141,8 @@ export class InGameScene extends Phaser.Scene {
       });
     });
   }
+  getPlayerByUuid = (uuid: string) => this.players.find((p) => p.uuid === uuid);
+  isAllPlayersDisabled = () => this.players.every(({ disabled }) => disabled);
   wsResponse = (value) => {
     let data;
     try {
@@ -153,7 +155,7 @@ export class InGameScene extends Phaser.Scene {
       data = {};
       return;
     }
-    const player = this.players.find(({ uuid }) => uuid === data.uuid);
+    const player = this.getPlayerByUuid(data.uuid);
     const dataManager = {
       move: () => {
         player.moveToXY(Number(data.x), Number(data.y), {
@@ -165,7 +167,7 @@ export class InGameScene extends Phaser.Scene {
           return;
         }
         player.playerDead(Number(data.x), Number(data.y));
-        if (this.players.every(({ disabled }) => disabled)) {
+        if (this.isAllPlayersDisabled()) {
           this.onGameOver();
         }
       },
@@ -193,13 +195,6 @@ export class InGameScene extends Phaser.Scene {
             ...newPlayers.map((p) => this.createPlayer(p)),
           ];
         }
-        this.initialData.players = data.players.map(
-          ({ uuid, nick, frameNo }) => ({
-            uuid,
-            nick,
-            frameNo,
-          }),
-        );
       },
       rtt: () => {
         (this.scene.get('InGameUIScene') as InGameUIScene).pingText.setText(
@@ -241,7 +236,11 @@ export class InGameScene extends Phaser.Scene {
       }
       this.players.push(newPlayer);
     });
-    console.log('this.players', this.initialData.players, this.players);
+    console.log(
+      'createPlayers this.players',
+      this.initialData.players,
+      this.players,
+    );
 
     this.players
       .sort((a) => (a.isMyPlayer ? -1 : 1))
