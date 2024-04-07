@@ -205,7 +205,22 @@
     "extraResources": [
       "./assets/**",
       "./public/**",
-      "libsteam_api.dylib"
+      {
+        "from": "./node_modules/steamworks.js/dist/win64/steam_api64.dll",
+        "to": "app/dist/main/steam_api64.dll"
+      },
+      {
+        "from": "./node_modules/steamworks.js/dist/win64/steam_api64.lib",
+        "to": "app/dist/main/steam_api64.lib"
+      },
+      {
+        "from": "./node_modules/steamworks.js/dist/osx/libsteam_api.dylib",
+        "to": "app/dist/main/libsteam_api.dylib"
+      },
+      {
+        "from": "./node_modules/steamworks.js/dist/linux64/libsteam_api.so",
+        "to": "app/dist/main/libsteam_api.so"
+      }
     ]
   },
   "devEngines": {
