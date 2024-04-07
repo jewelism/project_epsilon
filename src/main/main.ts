@@ -13,6 +13,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import Store from 'electron-store';
+import steamworks from 'steamworks.js';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { closeServer, openServer } from './server';
@@ -170,3 +171,13 @@ app
     });
   })
   .catch(console.warn);
+
+try {
+  const steamClient = steamworks.init(2930990);
+  // Print Steam username
+  console.log(steamClient.localplayer.getName());
+  steamworks.electronEnableSteamOverlay();
+  store.set('nick', steamClient.localplayer.getName());
+} catch (error) {
+  console.error('Steamworks initialization failed:', error);
+}
