@@ -15,7 +15,7 @@ import log from 'electron-log';
 import Store from 'electron-store';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { server } from './server';
+import { closeServer, openServer } from './server';
 
 class AppUpdater {
   constructor() {
@@ -51,8 +51,11 @@ let mainWindow: BrowserWindow | null = null;
 let window2: BrowserWindow | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-ipcMain.once('server', async (_event, arg) => {
-  server({ port: arg });
+ipcMain.on('openServer', async (_event, arg) => {
+  openServer({ port: arg });
+});
+ipcMain.on('closeServer', async () => {
+  closeServer();
 });
 const store = new Store();
 // IPC listener
@@ -62,11 +65,6 @@ ipcMain.on('electron-store-get', async (event, val) => {
 ipcMain.on('electron-store-set', async (event, key, val) => {
   store.set(key, val);
 });
-// ipcMain.on('ipc-example', async (event, arg) => {
-//   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-//   console.log(msgTemplate(arg));
-//   event.reply('ipc-example', msgTemplate('pong'));
-// });
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -134,7 +132,9 @@ const createWindow = async () => {
 /**
  * Add event listeners...
  */
-
+app.on('before-quit', () => {
+  closeServer();
+});
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed

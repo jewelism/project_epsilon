@@ -1,9 +1,10 @@
+/* eslint-disable import/no-cycle */
 /* eslint-disable no-underscore-dangle */
 import { KEYBOARD_KEYS, ZONE_KEYS } from '@/constants';
 import { Obstacle } from '@/objects/Obstacle';
 import { Player } from '@/objects/Player';
 import { type InGameUIScene } from '@/scenes/InGameUIScene';
-import { type CustomWebSocket } from '@/index';
+import { openMenuApp, removeGame, type CustomWebSocket } from '@/index';
 import {
   makeZone,
   mouseClickEffect,
@@ -44,8 +45,6 @@ export class InGameScene extends Phaser.Scene {
   clearZone: Phaser.Physics.Arcade.StaticGroup;
 
   async create() {
-    console.log('create InGameScene');
-
     this.scene.launch('InGameUIScene');
     this.obstacles = this.physics.add.group();
 
@@ -236,11 +235,6 @@ export class InGameScene extends Phaser.Scene {
       }
       this.players.push(newPlayer);
     });
-    console.log(
-      'createPlayers this.players',
-      this.initialData.players,
-      this.players,
-    );
 
     this.players
       .sort((a) => (a.isMyPlayer ? -1 : 1))
@@ -270,13 +264,21 @@ export class InGameScene extends Phaser.Scene {
       });
     });
   }
+  wsClosed = () => {
+    this.removeListeners();
+    this.initialData.ws.close();
+    removeGame();
+    openMenuApp();
+    window.electron.ipcRenderer.sendMessage('closeServer');
+  };
   removeListeners() {
     this.initialData.ws.removeEventListener('message', this.wsResponse);
+    this.initialData.ws.addEventListener('close', this.wsClosed);
   }
   async createSocketConnection() {
     try {
-      console.log('createSocketConnection');
       this.initialData.ws.addEventListener('message', this.wsResponse);
+      this.initialData.ws.addEventListener('close', this.wsClosed);
     } catch (e) {
       console.error('jew ws connection failed');
     }

@@ -1,7 +1,8 @@
+/* eslint-disable no-use-before-define */
 /* eslint-disable react-hooks/exhaustive-deps */
 // eslint-disable-next-line import/no-cycle
 import { type CustomWebSocket, closeMenuApp, createGame } from '@/index';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sprite } from '@/views/Sprite';
 
 type MultiplayLobbyProps = {
@@ -9,23 +10,31 @@ type MultiplayLobbyProps = {
   nickInput: string;
   frameNo: number;
   ipAddrInput: string;
-  servingPortInput: string;
+  setCurrentView: (view: string) => void;
 };
 export function MultiplayLobby({
   isHost,
   nickInput,
   frameNo,
   ipAddrInput,
-  servingPortInput,
+  setCurrentView,
 }: MultiplayLobbyProps) {
   const [infoText, setInfoText] = useState('');
   const [gameStartLoading, setGameStartLoading] = useState(false);
   const [players, setPlayers] = useState([] as any[]);
+  // eslint-disable-next-line no-undef
+  const retryRef = useRef();
   let alreadyStarted = false;
 
   const onClickMultiplayStart = () => {
     setGameStartLoading(true);
     window.ws.sendJson({ type: 'gameStart', players });
+  };
+
+  const onClickExit = () => {
+    window.ws.close();
+    window.electron.ipcRenderer.sendMessage('closeServer');
+    setCurrentView('MainMenu');
   };
 
   const gameStart = (receivedPlayers) => {
@@ -35,8 +44,6 @@ export function MultiplayLobby({
     createGame();
     setGameStartLoading(false);
     closeMenuApp();
-    // eslint-disable-next-line no-use-before-define
-    window.ws.removeEventListener('message', wsMessageListener);
   };
 
   const dataManager = {
@@ -80,20 +87,24 @@ export function MultiplayLobby({
       isHost ? 'Press start button' : 'Waiting for the host to start',
     );
   };
-  const wsOnError = (error) => {
-    setInfoText(`ws connection failed: ${error?.message}`);
-    // eslint-disable-next-line no-use-before-define
-    setTimeout(getSocketConnection, 3000);
+  const wsOnClose = () => {
+    setCurrentView('MainMenu');
+    alert('connection closed');
+  };
+  const wsOnError = () => {
+    setInfoText(`connection failed`);
+    clearTimeout(retryRef.current);
+    // @ts-ignore
+    retryRef.current = setTimeout(getSocketConnection, 3000);
   };
 
   const getSocketConnection = async () => {
     setInfoText('try to connect...');
-    const address = isHost
-      ? `ws://localhost:${servingPortInput || 20058}`
-      : `ws://${ipAddrInput}`;
+    const address = `ws://${ipAddrInput}`;
     window.ws = (await new WebSocket(address)) as CustomWebSocket;
     window.ws.addEventListener('error', wsOnError);
     window.ws.addEventListener('open', wsOnOpen);
+    window.ws.addEventListener('close', wsOnClose);
   };
 
   useEffect(() => {
@@ -102,19 +113,20 @@ export function MultiplayLobby({
 
   useEffect(() => {
     return () => {
+      console.log('cleanup');
+
+      clearTimeout(retryRef.current);
       window.ws.removeEventListener('message', wsMessageListener);
       window.ws.removeEventListener('error', wsOnError);
       window.ws.removeEventListener('open', wsOnOpen);
+      window.ws.removeEventListener('close', wsOnClose);
     };
   }, []);
 
   return (
     <div className="flex-center">
       <h1>MultiplayLobby</h1>
-      <p>
-        server: {ipAddrInput}
-        {isHost ? `:${servingPortInput || 20058}` : ''}
-      </p>
+      <p>server: {ipAddrInput}</p>
       <p>{infoText}</p>
       <div className="char_boxes_wrap">
         {players.map((player) => (
@@ -125,11 +137,20 @@ export function MultiplayLobby({
         ))}
       </div>
       <br />
-      {!gameStartLoading && isHost && (
-        <button type="button" onClick={onClickMultiplayStart}>
-          Start Game
+      <div className="flex-center row">
+        {!gameStartLoading && isHost && (
+          <button
+            type="button"
+            onClick={onClickMultiplayStart}
+            style={{ marginRight: 10 }}
+          >
+            Start Game
+          </button>
+        )}
+        <button type="button" onClick={onClickExit}>
+          Exit
         </button>
-      )}
+      </div>
       <p>{gameStartLoading ? '로오오오딩' : ''}</p>
     </div>
   );

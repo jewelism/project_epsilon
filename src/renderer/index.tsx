@@ -52,16 +52,21 @@ export const APP = {
 };
 const container = document.getElementById('root') as HTMLElement;
 export const openMenuApp = () => {
-  const root = createRoot(container);
-  APP.menu = root;
+  if (!APP.menu) {
+    const root = createRoot(container);
+    APP.menu = root;
+  }
   APP.menu.render(<Main />);
 };
 openMenuApp();
-export const closeMenuApp = () => APP.menu.unmount();
+export const closeMenuApp = () => {
+  APP.menu?.unmount();
+  APP.menu = null;
+};
 export const createGame = () => {
   APP.game = new Phaser.Game(config);
 };
 export const removeGame = () => {
-  APP.game.destroy(true);
+  APP.game?.destroy(true);
   APP.game = null;
 };

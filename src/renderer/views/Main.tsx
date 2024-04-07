@@ -1,7 +1,7 @@
 /* eslint-disable import/no-cycle */
 import { useEffect, useState } from 'react';
 import { MainMenu } from '@/views/MainMenu';
-import EditProfile from '@/views/EditProfile';
+import { EditProfile } from '@/views/EditProfile';
 import { MultiplayLobby } from '@/views/MultiplayLobby';
 import './index.css';
 
@@ -21,11 +21,9 @@ export function Main() {
 
   const onClickMultiplay = (host: boolean) => {
     if (host) {
-      setIpAddrInput('localhost');
-      window.electron.ipcRenderer.sendMessage(
-        'server',
-        Number(servingPortInput) || 20058,
-      );
+      const port = Number(servingPortInput) || 20058;
+      setIpAddrInput(`localhost:${port}`);
+      window.electron.ipcRenderer.sendMessage('openServer', port);
     }
     setIsHost(host);
     setCurrentView('MultiplayLobby');
@@ -47,13 +45,11 @@ export function Main() {
     <div id="menu_app">
       {currentView === 'MainMenu' && (
         <MainMenu
-          {...{
-            ipAddrInput,
-            setIpAddrInput,
-            servingPortInput,
-            setServingPortInput,
-            onClickMultiplay,
-          }}
+          ipAddrInput={ipAddrInput}
+          setIpAddrInput={setIpAddrInput}
+          servingPortInput={servingPortInput}
+          setServingPortInput={setServingPortInput}
+          onClickMultiplay={onClickMultiplay}
           onClickEditProfile={() => {
             setCurrentView('EditProfile');
           }}
@@ -74,7 +70,7 @@ export function Main() {
           nickInput={nickInput}
           frameNo={frameNo}
           ipAddrInput={ipAddrInput}
-          servingPortInput={servingPortInput}
+          setCurrentView={setCurrentView}
         />
       )}
     </div>

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 import Phaser from 'phaser';
 import { defaultTextStyle } from '@/constants';
 import { openMenuApp, removeGame } from '@/index';
@@ -47,12 +48,7 @@ export class InGameUIScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive()
       .on('pointerdown', () => {
-        const inGameScene = this.scene.get('InGameScene') as InGameScene;
-        inGameScene.removeListeners();
-        inGameScene.initialData.ws.close();
-        this.scene.stop();
-        removeGame();
-        openMenuApp();
+        this.onExit();
       });
   }
 
@@ -67,6 +63,16 @@ export class InGameUIScene extends Phaser.Scene {
 
   centerTextOff() {
     this.centerText.destroy();
+  }
+
+  onExit() {
+    const inGameScene = this.scene.get('InGameScene') as InGameScene;
+    inGameScene.removeListeners();
+    inGameScene.initialData.ws.close();
+    this.scene.stop();
+    removeGame();
+    window.electron.ipcRenderer.sendMessage('closeServer');
+    openMenuApp();
   }
 
   constructor() {

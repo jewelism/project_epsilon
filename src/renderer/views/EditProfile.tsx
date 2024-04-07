@@ -9,7 +9,7 @@ type EditProfileProps = {
   setFrameNo: (value: number) => void;
   onClickSaveProfile: () => void;
 };
-function EditProfile({
+export function EditProfile({
   nickInput,
   setNickInput,
   frameNo,
@@ -49,5 +49,3 @@ function EditProfile({
     </div>
   );
 }
-
-export default EditProfile;

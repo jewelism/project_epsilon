@@ -9,8 +9,15 @@ interface CustomWebSocket extends WebSocket {
   uuid?: string;
   sendJson: (data: Record<string, unknown>) => void;
 }
-
-export const server = ({ port }) => {
+let wssInstance: WebSocketServer | null = null;
+export const closeServer = () => {
+  wssInstance?.clients.forEach((client: CustomWebSocket) => {
+    client.terminate();
+  });
+  wssInstance?.close();
+  wssInstance = null;
+};
+export const openServer = ({ port }) => {
   let started = false;
   let players: {
     ws: CustomWebSocket;
@@ -23,6 +30,7 @@ export const server = ({ port }) => {
   const getPlayersForClient = () => players.map(({ ws: _ws, ...rest }) => rest);
 
   const wss = new WebSocketServer({ port });
+  wssInstance = wss;
   wss.on('connection', function connection(ws: CustomWebSocket) {
     ws.uuid = uuidv4();
 
@@ -69,7 +77,6 @@ export const server = ({ port }) => {
       }
     });
   });
-
   setInterval(() => {
     wss.clients.forEach((ws: CustomWebSocket) => {
       if (!ws.isAlive) return ws.terminate();
