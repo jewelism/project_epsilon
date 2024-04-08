@@ -203,12 +203,7 @@
       "output": "release/build"
     },
     "extraResources": [
-      "./assets/**",
-      "./public/**",
-      {
-        "from": "src/renderer/public",
-        "to": "app/dist/renderer/public"
-      }
+      "./assets/**"
     ]
   },
   "devEngines": {
