@@ -17,6 +17,7 @@ module.exports = {
     'lines-between-class-members': 'off',
     'jsx-props-no-spreading': 'off',
     'no-console': 'off',
+    'no-undef': 'off',
   },
   parserOptions: {
     ecmaVersion: 2022,
