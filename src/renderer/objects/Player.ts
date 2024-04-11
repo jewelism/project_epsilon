@@ -2,9 +2,8 @@ import { type InGameScene } from '@/scenes/InGameScene';
 import { defaultTextStyle } from '@/constants';
 import Phaser from 'phaser';
 
-export class Player extends Phaser.GameObjects.Container {
-  moveSpeed = 80;
-  sprite: Phaser.Physics.Arcade.Sprite;
+export class Player extends Phaser.Physics.Matter.Sprite {
+  moveSpeed = 0.5;
   frameNo: number;
   spriteKey: string;
 
@@ -22,12 +21,13 @@ export class Player extends Phaser.GameObjects.Container {
   isIgnoreRttCorrection = false;
   inLobby = false;
   nick: string = '';
+  nickText: Phaser.GameObjects.Text;
 
   constructor(
     scene: Phaser.Scene,
     { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer, inLobby = false },
   ) {
-    super(scene, x, y);
+    super(scene.matter.world, x, y, spriteKey, frameNo);
     this.uuid = uuid;
     this.nick = nick;
     this.isMyPlayer = isMyPlayer;
@@ -35,31 +35,30 @@ export class Player extends Phaser.GameObjects.Container {
     this.spriteKey = spriteKey;
     this.inLobby = inLobby;
 
-    this.sprite = new Phaser.Physics.Arcade.Sprite(
-      scene,
-      0,
-      0,
-      spriteKey,
-      frameNo,
-    );
-    this.setSize(this.sprite.width - 6, this.sprite.height - 8);
+    this.setSize(this.width - 6, this.height - 8).setAngularVelocity(0);
 
-    this.sprite.anims.create({
+    this.anims.create({
       key: `${spriteKey}_move${frameNo}`,
-      frames: this.sprite.anims.generateFrameNames(spriteKey, {
+      frames: this.anims.generateFrameNames(spriteKey, {
         frames: [frameNo, frameNo + 1],
       }),
       frameRate: this.moveSpeed / 20,
     });
-    scene.physics.world.enable(this);
 
-    this.add([this.sprite]);
     scene.add.existing(this);
-    this.setDepth(9).add(
-      new Phaser.GameObjects.Text(scene, 0, 0, nick, defaultTextStyle)
-        .setOrigin(0.5, 1.5)
-        .setAlpha(0.75),
-    );
+    this.setDepth(9);
+    this.nickText = new Phaser.GameObjects.Text(
+      scene,
+      0,
+      0,
+      nick,
+      defaultTextStyle,
+    )
+      .setOrigin(0.5, 1.5)
+      .setAlpha(0.75);
+  }
+  update(): void {
+    this.nickText.setPosition(this.x, this.y);
   }
   preUpdate() {
     if (this.inLobby) {
@@ -71,26 +70,46 @@ export class Player extends Phaser.GameObjects.Container {
     }
     this.updatePlayerInZone();
   }
-  moveToXY(x: number, y: number, { invert = false } = {}) {
-    if (invert) {
-      this.scene.physics.velocityFromRotation(
-        Phaser.Math.Angle.Between(x, y, this.x, this.y),
-        this.moveSpeed,
-        this.body.velocity as Phaser.Math.Vector2,
-      );
-    } else {
-      this.targetToMove = new Phaser.Math.Vector2(x, y);
-      this.scene.physics.moveToObject(this, this.targetToMove, this.moveSpeed);
-    }
+  moveToXY(x: number, y: number) {
+    // if (invert) {
+    //   this.scene.physics.velocityFromRotation(
+    //     Phaser.Math.Angle.Between(x, y, this.x, this.y),
+    //     this.moveSpeed,
+    //     this.body.velocity as Phaser.Math.Vector2,
+    //   );
+    // } else {
+    //   // this.scene.physics.moveToObject(this, this.targetToMove, this.moveSpeed);
+    // }
+    this.targetToMove = new Phaser.Math.Vector2(x, y);
+    // const angle = Phaser.Math.Angle.Between(x, y, this.x, this.y);
+    // this.scene.matter.body.setVelocity(this.body as MatterJS.BodyType, {
+    //   x: x - this.x,
+    //   y: y - this.y,
+    // });
+    const dx = x - this.x;
+    const dy = y - this.y;
+    const angle = Math.atan2(dy, dx);
+    const speedX = this.moveSpeed * Math.cos(angle);
+    const speedY = this.moveSpeed * Math.sin(angle);
+
+    // this.scene.matter.body.setVelocity(this.body as MatterJS.BodyType, {
+    //   x: speedX,
+    //   y: speedY,
+    // });
+    this.setVelocity(speedX, speedY);
+    // this.setAngle(
+    //   Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(x, y, this.x, this.y)),
+    // );
+    // this.setAngle(angle);
     this.flipSpriteByDirection();
-    this.sprite.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
+    this.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
   }
   flipSpriteByDirection() {
     if (this.body.velocity.x > 0) {
-      this.sprite.setFlipX(true);
+      this.setFlipX(true);
       return;
     }
-    this.sprite.setFlipX(false);
+    this.setFlipX(false);
   }
   stopWhenMouseTarget() {
     if (!this.targetToMove) {
@@ -112,16 +131,16 @@ export class Player extends Phaser.GameObjects.Container {
   }
   stopMove() {
     this.targetToMove = null;
-    (this.body as any).setVelocity(0, 0);
+    this.setVelocity(0, 0);
   }
   playerDead(x: number, y: number) {
     this.disabled = true;
     this.setPosition(x, y);
     this.stopMove();
-    this.sprite.setTint(0xff0000);
+    this.setTint(0xff0000);
 
     this.deadTweens = this.scene.tweens.add({
-      targets: this.sprite,
+      targets: this,
       angle: 360,
       duration: 1000,
       repeat: -1,
@@ -129,9 +148,9 @@ export class Player extends Phaser.GameObjects.Container {
   }
   playerResurrection(x: number, y: number) {
     this.setPosition(x, y);
-    this.sprite.clearTint();
+    this.clearTint();
     this.deadTweens?.stop();
-    this.sprite.angle = 0;
+    this.angle = 0;
     this.disabled = false;
   }
   updatePlayerInZone() {
@@ -181,9 +200,6 @@ export class Player extends Phaser.GameObjects.Container {
       }
       return false;
     });
-  }
-  isPlayerInSafeZone() {
-    return this.isPlayerInZone((this.scene as InGameScene).safeZone);
   }
   isPlayerInNonstopZone() {
     return this.isPlayerInZone((this.scene as InGameScene).nonstopZone);

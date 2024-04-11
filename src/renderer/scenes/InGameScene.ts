@@ -37,16 +37,16 @@ export class InGameScene extends Phaser.Scene {
   players: Player[] = [];
   map: Phaser.Tilemaps.Tilemap;
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
-  obstacles: Phaser.Physics.Arcade.Group;
-  clearZone: Phaser.Physics.Arcade.StaticGroup;
-  nonstopZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
-  straightZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
-  invertZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
-  collisions: Phaser.Physics.Arcade.StaticGroup;
+
+  obstacles: Obstacle[] = [];
+  nonstopZone: MatterJS.BodyType[];
+  straightZone: MatterJS.BodyType[];
+  invertZone: MatterJS.BodyType[];
+  clearZone: MatterJS.BodyType[];
+  collisions: MatterJS.BodyType[];
 
   async create() {
     this.scene.launch('InGameUIScene');
-    this.obstacles = this.physics.add.group();
 
     const { map, playerSpawnPoints, zonePoints } = this.createMap(this);
     this.map = map;
@@ -55,13 +55,29 @@ export class InGameScene extends Phaser.Scene {
     this.nonstopZone = makeZone(this, zonePoints.nonstop, 0x00ffff);
     this.straightZone = makeZone(this, zonePoints.straight, 0x00ffff);
     this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
-    this.clearZone = this.physics.add.staticGroup(
-      zonePoints.clear.map((cz) =>
-        this.add
-          .rectangle(cz.x, cz.y, cz.width, cz.height, 0xffffff, 0.5)
-          .setOrigin(0),
-      ),
-    );
+    this.clearZone = makeZone(this, zonePoints.clear, 0xffffff);
+
+    // this.clearZone = this.physics.add.staticGroup(
+    //   zonePoints.clear.map((cz) =>
+    //     this.add
+    //       .rectangle(cz.x, cz.y, cz.width, cz.height, 0xffffff, 0.5)
+    //       .setOrigin(0),
+    //   ),
+    // );
+    // TODO:
+    // // Create a new Matter.js polygon
+    // const vertices = [
+    //   { x: 0, y: 0 },
+    //   { x: 100, y: 0 },
+    //   { x: 50, y: 100 },
+    // ];
+    // const obstacle = this.matter.add.fromVertices(0, 0, vertices, {
+    //   render: {
+    //     fillColor: 0xffffff,
+    //     lineColor: 0x000000,
+    //     lineThickness: 1,
+    //   },
+    // });
 
     await this.createSocketConnection();
     this.createPlayers();
@@ -95,8 +111,8 @@ export class InGameScene extends Phaser.Scene {
     };
     console.log('my player created', this.collisions);
 
-    this.physics.add.overlap(this.obstacles, this.player, deadByCollision);
-    this.physics.add.collider(this.collisions, this.player, deadByCollision);
+    // this.physics.add.overlap(this.obstacles, this.player, deadByCollision);
+    // this.physics.add.collider(this.collisions, this.player, deadByCollision);
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       mouseClickEffect(this, pointer);
       if (this.player.disabled) {
@@ -113,7 +129,8 @@ export class InGameScene extends Phaser.Scene {
         invert: this.player.zone.invert,
       });
     });
-    this.physics.add.overlap(this.clearZone, this.player, () => {
+    // TODO: matter
+    this.matter.overlap(this.player, this.clearZone, () => {
       if (this.player.disabled) {
         return;
       }
@@ -147,6 +164,12 @@ export class InGameScene extends Phaser.Scene {
         });
       },
       dead: () => {
+        // TODO: player undefined
+        console.log('daed', player);
+
+        if (!player) {
+          return;
+        }
         if (player.disabled) {
           return;
         }
@@ -235,19 +258,20 @@ export class InGameScene extends Phaser.Scene {
       .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
       .startFollow(this.player, false)
       .setZoom(GAME.ZOOM);
-    const playersGroup = this.add.group(this.players.map((player) => player));
-    this.physics.add.overlap(this.player, playersGroup, (player1) => {
-      const player = player1 as Player;
-      if (!player.disabled) {
-        return;
-      }
-      this.initialData.ws.sendJson({
-        uuid: player.uuid,
-        type: 'resurrection',
-        x: this.playerSpawnPoints.x,
-        y: this.playerSpawnPoints.y,
-      });
-    });
+    // TODO: matter
+    // const playersGroup = this.add.group(this.players.map((player) => player));
+    // this.physics.add.overlap(this.player, playersGroup, (player1) => {
+    //   const player = player1 as Player;
+    //   if (!player.disabled) {
+    //     return;
+    //   }
+    //   this.initialData.ws.sendJson({
+    //     uuid: player.uuid,
+    //     type: 'resurrection',
+    //     x: this.playerSpawnPoints.x,
+    //     y: this.playerSpawnPoints.y,
+    //   });
+    // });
   }
   wsClosed = () => {
     this.removeListeners();
@@ -322,7 +346,7 @@ export class InGameScene extends Phaser.Scene {
     const bgLayer = map.createLayer('bg', bgTiles);
     map.createLayer('bg_items', bgTiles);
 
-    this.collisions = this.physics.add.staticGroup();
+    this.collisions = [];
     bgLayer.forEachTile((tile) => {
       const zone = makeZone(
         scene,
@@ -333,7 +357,7 @@ export class InGameScene extends Phaser.Scene {
         })) ?? [],
         0x050505,
       );
-      this.collisions.addMultiple(zone);
+      this.collisions = [...this.collisions, ...zone];
     });
 
     // const collision = map.filterObjects('collision', () => true);
@@ -347,6 +371,7 @@ export class InGameScene extends Phaser.Scene {
       ]),
     ) as ZonePointsType;
     // const aliveZonePoints = Object.values(zonePoints).flat();
+
     const obstacleSpawnPoints = map.filterObjects('ObstacleSpawn', () => true);
     const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
       if (properties.find(({ name }) => name === 'isRandomMove')) {
@@ -370,70 +395,76 @@ export class InGameScene extends Phaser.Scene {
     this.createRandomMoveObstacle(randomMovingObstacles);
     this.createStopObstacle(stopObstacles);
 
-    scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    scene.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     return { map, playerSpawnPoints, zonePoints };
   }
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
-    movingObstacles.forEach(({ x, y, width, height, properties }) => {
-      const obstacle = new Obstacle(this, {
-        x,
-        y,
-        width: 10,
-        height: 8,
-        spriteKey: 'pixel_animals',
-        frameNo: 2,
-      });
-      const isHorizontal = properties?.find(
-        ({ name }) => name === 'isHorizontal',
-      )?.value;
-      const tweens = {
-        targets: obstacle,
-        duration:
-          properties?.find(({ name }) => name === 'duration')?.value ?? 2000,
-        yoyo: true,
-        repeat: -1,
-      };
-      if (isHorizontal) {
-        this.tweens.add({
-          ...tweens,
-          x: x + width,
+    const obstacles = movingObstacles.map(
+      ({ x, y, width, height, properties }) => {
+        const obstacle = new Obstacle(this, {
+          x,
+          y,
+          width: 10,
+          height: 8,
+          spriteKey: 'pixel_animals',
+          frameNo: 2,
         });
-      } else {
-        this.tweens.add({
-          ...tweens,
-          y: y + height,
-        });
-      }
-      this.obstacles.add(obstacle);
-    });
+        const isHorizontal = properties?.find(
+          ({ name }) => name === 'isHorizontal',
+        )?.value;
+        const tweens = {
+          targets: obstacle,
+          duration:
+            properties?.find(({ name }) => name === 'duration')?.value ?? 2000,
+          yoyo: true,
+          repeat: -1,
+        };
+        if (isHorizontal) {
+          this.tweens.add({
+            ...tweens,
+            x: x + width,
+          });
+        } else {
+          this.tweens.add({
+            ...tweens,
+            y: y + height,
+          });
+        }
+        return obstacle;
+      },
+    );
+    this.obstacles = [...this.obstacles, ...obstacles];
   }
   createRandomMoveObstacle(
     randomMovingObstacles: Phaser.Types.Tilemaps.TiledObject[],
   ) {
-    randomMovingObstacles.forEach(({ x, y, width, height, properties }) => {
-      const obstacle = new Obstacle(this, {
-        x,
-        y,
-        width: 10,
-        height: 8,
-        spriteKey: 'pixel_animals',
-        frameNo: 3,
-      });
-      moveRandomlyWithinRange(
-        this,
-        obstacle,
-        x,
-        width,
-        y,
-        height,
-        properties.find(({ name }) => name === 'duration').value,
-      );
-      this.obstacles.add(obstacle);
-    });
+    const obstacles = randomMovingObstacles.map(
+      ({ x, y, width, height, properties }) => {
+        const obstacle = new Obstacle(this, {
+          x,
+          y,
+          width: 10,
+          height: 8,
+          spriteKey: 'pixel_animals',
+          frameNo: 3,
+        });
+        moveRandomlyWithinRange(
+          this,
+          obstacle,
+          x,
+          width,
+          y,
+          height,
+          properties.find(({ name }) => name === 'duration').value,
+        );
+        return obstacle;
+      },
+    );
+    this.obstacles = [...this.obstacles, ...obstacles];
   }
   createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
-    stopObstacles.forEach(({ x, y, width, height }) => {
+    const obstacles = stopObstacles.map(({ x, y, width, height }) => {
       const obstacle = new Obstacle(this, {
         x,
         y,
@@ -442,9 +473,10 @@ export class InGameScene extends Phaser.Scene {
         spriteKey: 'pixel_animals',
         frameNo: 0,
       });
-      obstacle.sprite.setDisplaySize(width, height);
-      this.obstacles.add(obstacle);
+      obstacle.setDisplaySize(width, height);
+      return obstacle;
     });
+    this.obstacles = [...this.obstacles, ...obstacles];
   }
   prepareNextStage(afterShutdown) {
     this.scene.stop();
@@ -485,6 +517,7 @@ export class InGameScene extends Phaser.Scene {
     this.player = null;
     this.players.forEach((player) => player?.destroy());
     this.players = [];
+    this.obstacles = [];
     this.scene.systems.shutdown();
   }
 
@@ -513,4 +546,3 @@ export class InGameScene extends Phaser.Scene {
     };
   }
 }
-// TODO: ws disconnect시 재접속 로직 추가
