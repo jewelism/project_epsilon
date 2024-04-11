@@ -34,18 +34,7 @@
          "draworder":"topdown",
          "id":14,
          "name":"clearZone",
-         "objects":[
-                {
-                 "height":16.7216370636958,
-                 "id":517,
-                 "name":"clearZone1",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":14.3615892527754,
-                 "x":560.422737849353,
-                 "y":47.101988815149
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -289,7 +278,7 @@
                 {
                  "height":0,
                  "id":537,
-                 "name":"safeZone",
+                 "name":"polygon1",
                  "polygon":[
                         {
                          "x":0,
@@ -383,29 +372,7 @@
          "draworder":"topdown",
          "id":11,
          "name":"nonstopZone",
-         "objects":[
-                {
-                 "height":36.0679363689434,
-                 "id":523,
-                 "name":"nonstop",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":79.9235790479223,
-                 "x":175.669943745688,
-                 "y":38.1240712731518
-                }, 
-                {
-                 "height":49.5382754854591,
-                 "id":531,
-                 "name":"nonstop",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":103.547560233386,
-                 "x":88.334388641593,
-                 "y":231.240596338913
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,

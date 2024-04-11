@@ -38,11 +38,11 @@ export class InGameScene extends Phaser.Scene {
   map: Phaser.Tilemaps.Tilemap;
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   obstacles: Phaser.Physics.Arcade.Group;
-  safeZone: Phaser.Geom.Rectangle[];
-  nonstopZone: Phaser.Geom.Rectangle[];
-  straightZone: Phaser.Geom.Rectangle[];
-  invertZone: Phaser.Geom.Rectangle[];
   clearZone: Phaser.Physics.Arcade.StaticGroup;
+  safeZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
+  nonstopZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
+  straightZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
+  invertZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
 
   async create() {
     this.scene.launch('InGameUIScene');
@@ -92,6 +92,8 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
+      console.log('player dead by zone');
+
       this.initialData.ws.sendJson({
         uuid: this.player.uuid,
         type: 'dead',
@@ -105,6 +107,8 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
+      console.log('player dead by obstacle');
+
       this.initialData.ws.sendJson({
         uuid: this.player.uuid,
         type: 'dead',

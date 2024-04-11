@@ -1,26 +1,29 @@
 export const makeZone = (
   scene: Phaser.Scene,
   zonePoints: Phaser.Types.Tilemaps.TiledObject[],
-  color?: number
-) => {
-  return zonePoints.map(({ x, y, width, height }) => {
-    const zone = scene.add
-      .rectangle(x - 1, y - 1, width + 2, height + 2)
-      .setOrigin(0, 0);
+  color?: number,
+): (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[] => {
+  return zonePoints.map(({ x, y, width, height, rectangle, polygon }) => {
+    let zone;
+    if (rectangle) {
+      zone = scene.add.rectangle(x - 1, y - 1, width + 2, height + 2);
+    } else if (polygon) {
+      zone = scene.add.polygon(x, y, polygon);
+    }
     if (color) {
       zone.setFillStyle(color, 0.5);
     }
-    return new Phaser.Geom.Rectangle(zone.x, zone.y, zone.width, zone.height);
+    return zone.setOrigin(0, 0);
   });
 };
 
 export const playMoveAnim = (char, spriteKey: string) => {
   if (char.body.velocity.x < 0) {
     char.anims.play(`${spriteKey}-left`, true);
-    char.direction = "left";
+    char.direction = 'left';
   } else if (char.body.velocity.x > 0) {
     char.anims.play(`${spriteKey}-right`, true);
-    char.direction = "right";
+    char.direction = 'right';
   }
 };
 
@@ -35,16 +38,16 @@ export const createFlashFn = () => {
 
 export const mouseClickEffect = (
   scene: Phaser.Scene,
-  pointer: Phaser.Input.Pointer
+  pointer: Phaser.Input.Pointer,
 ) => {
-  let circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
+  const circle = scene.add.circle(pointer.worldX, pointer.worldY, 7, 0x00ffff);
   scene.tweens.add({
     targets: circle,
     scaleX: 0.1,
     scaleY: 0.1,
     alpha: 0,
     duration: 750,
-    ease: "Power2",
+    ease: 'Power2',
     onComplete: () => circle.destroy(),
   });
 };
@@ -56,7 +59,7 @@ export const moveRandomlyWithinRange = (
   width: number,
   y: number,
   height: number,
-  duration: number
+  duration: number,
 ) => {
   const newX = Phaser.Math.Between(x, x + width);
   const newY = Phaser.Math.Between(y, y + height);
@@ -68,7 +71,7 @@ export const moveRandomlyWithinRange = (
     duration,
   });
 
-  tween.on("complete", () => {
+  tween.on('complete', () => {
     moveRandomlyWithinRange(scene, targets, x, width, y, height, duration);
   });
 };

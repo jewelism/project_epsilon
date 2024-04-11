@@ -157,13 +157,30 @@ export class Player extends Phaser.GameObjects.Container {
       }
     }
   }
-  isPlayerInZone(zone: Phaser.Geom.Rectangle[]) {
-    return zone.some((z) =>
-      Phaser.Geom.Rectangle.ContainsPoint(
-        z,
-        new Phaser.Geom.Point(this.x, this.y),
-      ),
-    );
+  isPlayerInZone(
+    zone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[],
+  ) {
+    return zone.some((z) => {
+      if (z.geom.type === Phaser.Geom.POLYGON) {
+        const polygon = new Phaser.Geom.Polygon(
+          z.geom.points.map(
+            (point) => new Phaser.Geom.Point(point.x + z.x, point.y + z.y),
+          ),
+        );
+        const contain = Phaser.Geom.Polygon.ContainsPoint(
+          polygon,
+          new Phaser.Geom.Point(this.x, this.y),
+        );
+        return contain;
+      }
+      if (z.geom.type === Phaser.Geom.RECTANGLE) {
+        return Phaser.Geom.Rectangle.ContainsPoint(
+          z.geom as Phaser.Geom.Rectangle,
+          new Phaser.Geom.Point(this.x, this.y),
+        );
+      }
+      return false;
+    });
   }
   isPlayerInSafeZone() {
     return this.isPlayerInZone((this.scene as InGameScene).safeZone);
