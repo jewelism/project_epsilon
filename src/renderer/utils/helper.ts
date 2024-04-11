@@ -1,25 +1,24 @@
 export const makeZone = (
   scene: Phaser.Scene,
   zonePoints: Phaser.Types.Tilemaps.TiledObject[],
-  color?: number,
-  label?: string,
+  { color, label }: { color?: number; label?: string } = {},
 ) => {
   return zonePoints.map(({ x, y, width, height, rectangle, polygon }) => {
     let zone: MatterJS.BodyType;
-    const graphics: Phaser.GameObjects.Graphics = scene.add.graphics({
-      fillStyle: { color, alpha: 0.1 },
-    });
+    const graphics: Phaser.GameObjects.Graphics = color
+      ? scene.add.graphics({
+          fillStyle: { color, alpha: 0.1 },
+        })
+      : null;
     if (rectangle) {
       zone = scene.matter.add.rectangle(
         x - 1 + width / 2,
         y - 1 + height / 2,
         width + 2,
         height + 2,
-        {
-          isStatic: true,
-        },
+        { isSensor: true },
       );
-      graphics.fillRect(x - 1, y - 1, width + 2, height + 2);
+      graphics?.fillRect(x - 1, y - 1, width + 2, height + 2);
     } else if (polygon) {
       const vertices = polygon.map((vertex) => ({
         x: Math.floor(vertex.x + x),
@@ -31,12 +30,12 @@ export const makeZone = (
         centroid.x,
         centroid.y,
         vertices, // vertices.length 20 넘기면 오류 발생
-        { isStatic: true },
+        { isSensor: true },
         false,
         0.01,
-        1,
+        0.01,
       );
-      graphics.fillPoints(vertices, true);
+      graphics?.fillPoints(vertices, true);
     }
     zone.label = label;
     return zone;

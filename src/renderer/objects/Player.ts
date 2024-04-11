@@ -12,20 +12,18 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   uuid: string;
   isMyPlayer: boolean;
   deadTweens: Phaser.Tweens.Tween;
-  zone: Record<'safe' | 'nonstop' | 'straight' | 'invert', boolean> = {
-    safe: true,
+  zone: Record<'nonstop' | 'straight' | 'invert', boolean> = {
     nonstop: false,
     straight: false,
     invert: false,
   };
   isIgnoreRttCorrection = false;
-  inLobby = false;
   nick: string = '';
   nickText: Phaser.GameObjects.Text;
 
   constructor(
     scene: Phaser.Scene,
-    { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer, inLobby = false },
+    { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer },
   ) {
     super(scene.matter.world, x, y, spriteKey, frameNo, {
       shape: {
@@ -39,14 +37,8 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     this.isMyPlayer = isMyPlayer;
     this.frameNo = frameNo;
     this.spriteKey = spriteKey;
-    this.inLobby = inLobby;
 
-    scene.add.existing(this);
-    this.setStatic(false)
-      .setAngularVelocity(0)
-      .setFixedRotation()
-      .setIgnoreGravity(true)
-      .setDepth(9);
+    this.setSensor(true).setDepth(9).setFrictionAir(0).setFriction(0);
     this.anims.create({
       key: `${spriteKey}_move${frameNo}`,
       frames: this.anims.generateFrameNames(spriteKey, {
@@ -54,7 +46,6 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       }),
       frameRate: this.moveSpeed / 20,
     });
-
     this.nickText = new Phaser.GameObjects.Text(
       scene,
       0,
@@ -64,31 +55,32 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     )
       .setOrigin(0.5, 1.5)
       .setAlpha(0.75);
-  }
-  update(): void {
-    this.nickText.setPosition(this.x, this.y);
+    scene.add.existing(this);
+    scene.add.existing(this.nickText);
   }
   preUpdate() {
-    if (this.inLobby) {
-      this.stopWhenMouseTarget();
-      return;
-    }
     if (this.disabled) {
       return;
     }
     this.updatePlayerInZone();
+    this.nickText.setPosition(this.x, this.y);
   }
   moveToXY(x: number, y: number) {
     this.targetToMove = new Phaser.Math.Vector2(x, y);
-    const angle = Math.atan2(y - this.y, x - this.x);
-    const speedX = this.moveSpeed * Math.cos(angle);
-    const speedY = this.moveSpeed * Math.sin(angle);
-    this.setVelocity(speedX, speedY);
+    const direction = new Phaser.Math.Vector2(x - this.x, y - this.y);
+    if (this.zone.invert) {
+      direction.negate();
+    }
+    direction.normalize();
+    this.setVelocity(
+      direction.x * this.moveSpeed,
+      direction.y * this.moveSpeed,
+    );
     this.flipSpriteByDirection();
     this.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
   }
   flipSpriteByDirection() {
-    if (this.body.velocity.x > 0) {
+    if (this.getVelocity().x > 0) {
       this.setFlipX(true);
       return;
     }
@@ -114,7 +106,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
   stopMove() {
     this.targetToMove = null;
-    this.setVelocity(0, 0);
+    this.setVelocity(0);
   }
   playerDead(x: number, y: number) {
     this.disabled = true;

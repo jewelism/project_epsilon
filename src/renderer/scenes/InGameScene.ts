@@ -52,32 +52,22 @@ export class InGameScene extends Phaser.Scene {
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
 
-    this.nonstopZone = makeZone(this, zonePoints.nonstop, 0x00ffff);
-    this.straightZone = makeZone(this, zonePoints.straight, 0x00ffff);
-    this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
-    this.clearZone = makeZone(this, zonePoints.clear, 0xffffff);
-
-    // this.clearZone = this.physics.add.staticGroup(
-    //   zonePoints.clear.map((cz) =>
-    //     this.add
-    //       .rectangle(cz.x, cz.y, cz.width, cz.height, 0xffffff, 0.5)
-    //       .setOrigin(0),
-    //   ),
-    // );
-    // TODO:
-    // // Create a new Matter.js polygon
-    // const vertices = [
-    //   { x: 0, y: 0 },
-    //   { x: 100, y: 0 },
-    //   { x: 50, y: 100 },
-    // ];
-    // const obstacle = this.matter.add.fromVertices(0, 0, vertices, {
-    //   render: {
-    //     fillColor: 0xffffff,
-    //     lineColor: 0x000000,
-    //     lineThickness: 1,
-    //   },
-    // });
+    this.nonstopZone = makeZone(this, zonePoints.nonstop, {
+      color: 0x00ffff,
+      label: 'nonstop',
+    });
+    this.straightZone = makeZone(this, zonePoints.straight, {
+      color: 0x00ffff,
+      label: 'straight',
+    });
+    this.invertZone = makeZone(this, zonePoints.invert, {
+      color: 0xffffff,
+      label: 'invert',
+    });
+    this.clearZone = makeZone(this, zonePoints.clear, {
+      color: 0xffffff,
+      label: 'clear',
+    });
 
     await this.createSocketConnection();
     this.createPlayers();
@@ -94,19 +84,6 @@ export class InGameScene extends Phaser.Scene {
       },
       loop: true,
     });
-  }
-  onMyPlayerCreated() {
-    const deadByCollision = () => {
-      if (this.player.disabled) {
-        return;
-      }
-      this.initialData.ws.sendJson({
-        uuid: this.player.uuid,
-        type: 'dead',
-        x: this.player.x.toFixed(0),
-        y: this.player.y.toFixed(0),
-      });
-    };
 
     this.matter.world.on('collisionstart', (_event, a, b) => {
       const bodyA = a.gameObject;
@@ -119,36 +96,49 @@ export class InGameScene extends Phaser.Scene {
         [a.label, b.label].includes('collision') ||
         [bodyA, bodyB].some((body) => this.obstacles.includes(body))
       ) {
-        deadByCollision();
+        if (this.player.disabled) {
+          return;
+        }
+        this.initialData.ws.sendJson({
+          uuid: this.player.uuid,
+          type: 'dead',
+          x: this.player.x.toFixed(0),
+          y: this.player.y.toFixed(0),
+        });
       }
     });
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      mouseClickEffect(this, pointer);
-      if (this.player.disabled) {
+    this.matter.world.on('collisionstart', (_event, a, b) => {
+      const bodyA = a.gameObject;
+      const bodyB = b.gameObject;
+      if (!(bodyA?.spriteKey && bodyB?.spriteKey)) {
         return;
       }
-      if (this.player.zone.straight) {
-        return;
-      }
+      const deadPlayer = [bodyA, bodyB].find(({ disabled }) => disabled);
       this.initialData.ws.sendJson({
-        uuid: this.player.uuid,
-        type: 'move',
-        x: pointer.worldX.toFixed(0),
-        y: pointer.worldY.toFixed(0),
-        invert: this.player.zone.invert,
+        uuid: deadPlayer.uuid,
+        type: 'resurrection',
+        x: this.playerSpawnPoints.x,
+        y: this.playerSpawnPoints.y,
       });
     });
-    // TODO: matter
-    this.matter.overlap(this.player, this.clearZone, () => {
-      if (this.player.disabled) {
+    this.matter.world.on('collisionstart', (_event, a, b) => {
+      const bodyA = a.gameObject;
+      const bodyB = b.gameObject;
+      const isPlayer = [bodyA, bodyB].includes(this.player);
+      if (!isPlayer) {
         return;
       }
-      this.player.disabled = true;
-      this.initialData.ws.sendJson({
-        uuid: this.player.uuid,
-        nick: this.player.nick,
-        type: 'clear',
-      });
+      if ([a.label, b.label].includes('clear')) {
+        if (this.player.disabled) {
+          return;
+        }
+        this.player.disabled = true;
+        this.initialData.ws.sendJson({
+          uuid: this.player.uuid,
+          nick: this.player.nick,
+          type: 'clear',
+        });
+      }
     });
   }
   getPlayerByUuid = (uuid: string) => this.players.find((p) => p.uuid === uuid);
@@ -166,14 +156,18 @@ export class InGameScene extends Phaser.Scene {
       return;
     }
     const player = this.getPlayerByUuid(data.uuid);
+    // TODO: 플레이어1이 dead인상태에서 player2가 접속하면 player1이 dead tint와 dead tweens가 안보이는 문제
     const dataManager = {
       move: () => {
+        if (!player) {
+          return;
+        }
+        if (player.disabled) {
+          return;
+        }
         player.moveToXY(Number(data.x), Number(data.y));
       },
       dead: () => {
-        // TODO: player undefined
-        console.log('daed', player);
-
         if (!player) {
           return;
         }
@@ -265,20 +259,24 @@ export class InGameScene extends Phaser.Scene {
       .setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels)
       .startFollow(this.player, false)
       .setZoom(GAME.ZOOM);
-    // TODO: matter
-    // const playersGroup = this.add.group(this.players.map((player) => player));
-    // this.physics.add.overlap(this.player, playersGroup, (player1) => {
-    //   const player = player1 as Player;
-    //   if (!player.disabled) {
-    //     return;
-    //   }
-    //   this.initialData.ws.sendJson({
-    //     uuid: player.uuid,
-    //     type: 'resurrection',
-    //     x: this.playerSpawnPoints.x,
-    //     y: this.playerSpawnPoints.y,
-    //   });
-    // });
+  }
+  onMyPlayerCreated() {
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      mouseClickEffect(this, pointer);
+      if (this.player.disabled) {
+        return;
+      }
+      if (this.player.zone.straight) {
+        return;
+      }
+      this.initialData.ws.sendJson({
+        uuid: this.player.uuid,
+        type: 'move',
+        x: pointer.worldX.toFixed(0),
+        y: pointer.worldY.toFixed(0),
+        invert: this.player.zone.invert,
+      });
+    });
   }
   wsClosed = () => {
     this.removeListeners();
@@ -298,14 +296,6 @@ export class InGameScene extends Phaser.Scene {
     } catch (e) {
       console.error('jew ws connection failed');
     }
-  }
-  isPlayerInZone(zone: Phaser.Geom.Rectangle[]) {
-    return zone.some((z) =>
-      Phaser.Geom.Rectangle.ContainsPoint(
-        z,
-        new Phaser.Geom.Point(this.player.x, this.player.y),
-      ),
-    );
   }
   playerPositionCorrection(serverData: {
     players: { x: number; y: number; uuid: string }[];
@@ -352,25 +342,7 @@ export class InGameScene extends Phaser.Scene {
     const bgTiles = map.addTilesetImage('tiny_ski', 'tiny_ski');
     const bgLayer = map.createLayer('bg', bgTiles);
     map.createLayer('bg_items', bgTiles);
-
-    this.collisions = [];
-    bgLayer.forEachTile((tile) => {
-      const zone = makeZone(
-        scene,
-        (tile.getCollisionGroup() as any)?.objects.map(({ x, y, ...rest }) => ({
-          x: tile.pixelX + x,
-          y: tile.pixelY + y,
-          ...rest,
-        })) ?? [],
-        0x050505,
-        'collision',
-      );
-      this.collisions = [...this.collisions, ...zone];
-    });
-
-    // const collision = map.filterObjects('collision', () => true);
-    // console.log('collision', collision);
-
+    this.createCollisions(scene, bgLayer);
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
     const zonePoints = Object.fromEntries(
       ZONE_KEYS.map((zone) => [
@@ -378,7 +350,6 @@ export class InGameScene extends Phaser.Scene {
         map.filterObjects(`${zone}Zone`, () => true) ?? [],
       ]),
     ) as ZonePointsType;
-    // const aliveZonePoints = Object.values(zonePoints).flat();
 
     const obstacleSpawnPoints = map.filterObjects('ObstacleSpawn', () => true);
     const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
@@ -406,6 +377,21 @@ export class InGameScene extends Phaser.Scene {
     scene.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     return { map, playerSpawnPoints, zonePoints };
+  }
+  createCollisions(scene, bgLayer) {
+    this.collisions = [];
+    bgLayer.forEachTile((tile) => {
+      const zone = makeZone(
+        scene,
+        (tile.getCollisionGroup() as any)?.objects.map(({ x, y, ...rest }) => ({
+          x: tile.pixelX + x,
+          y: tile.pixelY + y,
+          ...rest,
+        })) ?? [],
+        { color: 0x050505, label: 'collision' },
+      );
+      this.collisions = [...this.collisions, ...zone];
+    });
   }
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     const obstacles = movingObstacles.map(
