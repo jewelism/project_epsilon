@@ -12,7 +12,7 @@ import {
 } from '@/utils/helper';
 import Phaser from 'phaser';
 import PixelAnimals from '@/public/pixel_animals.png';
-import SkiTiled from '@/public/tiled/ski_tiled.png';
+import TinySki from '@/public/tiled/tiny_ski.png';
 import map1 from '@/public/tiled/map_1.json';
 import map2 from '@/public/tiled/map_2.json';
 
@@ -39,21 +39,19 @@ export class InGameScene extends Phaser.Scene {
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
   obstacles: Phaser.Physics.Arcade.Group;
   clearZone: Phaser.Physics.Arcade.StaticGroup;
-  safeZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
   nonstopZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
   straightZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
   invertZone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[];
+  collisions: Phaser.Physics.Arcade.StaticGroup;
 
   async create() {
     this.scene.launch('InGameUIScene');
     this.obstacles = this.physics.add.group();
 
-    const { map, playerSpawnPoints, aliveZonePoints, zonePoints } =
-      this.createMap(this);
+    const { map, playerSpawnPoints, zonePoints } = this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
 
-    this.safeZone = makeZone(this, aliveZonePoints, 0x00ff00);
     this.nonstopZone = makeZone(this, zonePoints.nonstop, 0x00ffff);
     this.straightZone = makeZone(this, zonePoints.straight, 0x00ffff);
     this.invertZone = makeZone(this, zonePoints.invert, 0xffffff);
@@ -81,29 +79,8 @@ export class InGameScene extends Phaser.Scene {
       loop: true,
     });
   }
-  update(): void {
-    if (!this.player) {
-      return;
-    }
-    if (this.player.disabled) {
-      return;
-    }
-    if (!this.player.isPlayerInSafeZone()) {
-      if (this.player.disabled) {
-        return;
-      }
-      console.log('player dead by zone');
-
-      this.initialData.ws.sendJson({
-        uuid: this.player.uuid,
-        type: 'dead',
-        x: this.player.x.toFixed(0),
-        y: this.player.y.toFixed(0),
-      });
-    }
-  }
   onMyPlayerCreated() {
-    this.physics.add.overlap(this.obstacles, this.player, () => {
+    const deadByCollision = () => {
       if (this.player.disabled) {
         return;
       }
@@ -115,7 +92,11 @@ export class InGameScene extends Phaser.Scene {
         x: this.player.x.toFixed(0),
         y: this.player.y.toFixed(0),
       });
-    });
+    };
+    console.log('my player created', this.collisions);
+
+    this.physics.add.overlap(this.obstacles, this.player, deadByCollision);
+    this.physics.add.collider(this.collisions, this.player, deadByCollision);
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       mouseClickEffect(this, pointer);
       if (this.player.disabled) {
@@ -337,9 +318,26 @@ export class InGameScene extends Phaser.Scene {
     const map = scene.make.tilemap({
       key: `map_${this.initialData.stage}`,
     });
-    const bgTiles = map.addTilesetImage('ski_tiled', 'ski_tiled');
-    map.createLayer('bg', bgTiles);
+    const bgTiles = map.addTilesetImage('tiny_ski', 'tiny_ski');
+    const bgLayer = map.createLayer('bg', bgTiles);
     map.createLayer('bg_items', bgTiles);
+
+    this.collisions = this.physics.add.staticGroup();
+    bgLayer.forEachTile((tile) => {
+      const zone = makeZone(
+        scene,
+        (tile.getCollisionGroup() as any)?.objects.map(({ x, y, ...rest }) => ({
+          x: tile.pixelX + x,
+          y: tile.pixelY + y,
+          ...rest,
+        })) ?? [],
+        0x050505,
+      );
+      this.collisions.addMultiple(zone);
+    });
+
+    // const collision = map.filterObjects('collision', () => true);
+    // console.log('collision', collision);
 
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
     const zonePoints = Object.fromEntries(
@@ -348,7 +346,7 @@ export class InGameScene extends Phaser.Scene {
         map.filterObjects(`${zone}Zone`, () => true) ?? [],
       ]),
     ) as ZonePointsType;
-    const aliveZonePoints = Object.values(zonePoints).flat();
+    // const aliveZonePoints = Object.values(zonePoints).flat();
     const obstacleSpawnPoints = map.filterObjects('ObstacleSpawn', () => true);
     const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
       if (properties.find(({ name }) => name === 'isRandomMove')) {
@@ -374,12 +372,7 @@ export class InGameScene extends Phaser.Scene {
 
     scene.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
-    return {
-      map,
-      playerSpawnPoints,
-      aliveZonePoints,
-      zonePoints,
-    };
+    return { map, playerSpawnPoints, zonePoints };
   }
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     movingObstacles.forEach(({ x, y, width, height, properties }) => {
@@ -501,7 +494,7 @@ export class InGameScene extends Phaser.Scene {
   preload() {
     this.load.tilemapTiledJSON('map_1', map1);
     this.load.tilemapTiledJSON('map_2', map2);
-    this.load.image('ski_tiled', SkiTiled);
+    this.load.image('tiny_ski', TinySki);
     this.load.spritesheet('pixel_animals', PixelAnimals, {
       frameWidth: 16,
       frameHeight: 16,

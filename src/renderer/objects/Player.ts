@@ -147,7 +147,7 @@ export class Player extends Phaser.GameObjects.Container {
       this.zone.nonstop = true;
       this.zone.straight = true;
       this.zone.invert = false;
-    } else if (this.isPlayerInSafeZone()) {
+    } else {
       this.stopWhenMouseTarget();
       if (this.zone.nonstop || this.zone.straight || this.zone.invert) {
         this.zone.nonstop = false;
