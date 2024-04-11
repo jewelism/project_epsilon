@@ -100,8 +100,6 @@ export class InGameScene extends Phaser.Scene {
       if (this.player.disabled) {
         return;
       }
-      console.log('player dead by obstacle');
-
       this.initialData.ws.sendJson({
         uuid: this.player.uuid,
         type: 'dead',
@@ -109,10 +107,21 @@ export class InGameScene extends Phaser.Scene {
         y: this.player.y.toFixed(0),
       });
     };
-    console.log('my player created', this.collisions);
 
-    // this.physics.add.overlap(this.obstacles, this.player, deadByCollision);
-    // this.physics.add.collider(this.collisions, this.player, deadByCollision);
+    this.matter.world.on('collisionstart', (_event, a, b) => {
+      const bodyA = a.gameObject;
+      const bodyB = b.gameObject;
+      const isPlayer = [bodyA, bodyB].includes(this.player);
+      if (!isPlayer) {
+        return;
+      }
+      if (
+        [a.label, b.label].includes('collision') ||
+        [bodyA, bodyB].some((body) => this.obstacles.includes(body))
+      ) {
+        deadByCollision();
+      }
+    });
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       mouseClickEffect(this, pointer);
       if (this.player.disabled) {
@@ -159,9 +168,7 @@ export class InGameScene extends Phaser.Scene {
     const player = this.getPlayerByUuid(data.uuid);
     const dataManager = {
       move: () => {
-        player.moveToXY(Number(data.x), Number(data.y), {
-          invert: data.invert,
-        });
+        player.moveToXY(Number(data.x), Number(data.y));
       },
       dead: () => {
         // TODO: player undefined
@@ -356,6 +363,7 @@ export class InGameScene extends Phaser.Scene {
           ...rest,
         })) ?? [],
         0x050505,
+        'collision',
       );
       this.collisions = [...this.collisions, ...zone];
     });

@@ -11,6 +11,7 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
         width,
         height,
       },
+      isStatic: true,
     });
     scene.add.existing(this);
   }

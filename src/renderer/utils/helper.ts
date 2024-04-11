@@ -2,57 +2,62 @@ export const makeZone = (
   scene: Phaser.Scene,
   zonePoints: Phaser.Types.Tilemaps.TiledObject[],
   color?: number,
+  label?: string,
 ) => {
   return zonePoints.map(({ x, y, width, height, rectangle, polygon }) => {
     let zone: MatterJS.BodyType;
     const graphics: Phaser.GameObjects.Graphics = scene.add.graphics({
-      fillStyle: { color },
+      fillStyle: { color, alpha: 0.1 },
     });
     if (rectangle) {
-      zone = scene.matter.add.rectangle(x - 1, y - 1, width + 2, height + 2, {
-        isStatic: true,
-      });
-      console.log('make zone rect', zone);
+      zone = scene.matter.add.rectangle(
+        x - 1 + width / 2,
+        y - 1 + height / 2,
+        width + 2,
+        height + 2,
+        {
+          isStatic: true,
+        },
+      );
       graphics.fillRect(x - 1, y - 1, width + 2, height + 2);
     } else if (polygon) {
       const vertices = polygon.map((vertex) => ({
         x: Math.floor(vertex.x + x),
         y: Math.floor(vertex.y + y),
       }));
-      console.log('polygon', polygon, JSON.stringify(vertices));
+      // eslint-disable-next-line no-use-before-define
+      const centroid = calculateCentroid(vertices);
       zone = scene.matter.add.fromVertices(
-        x,
-        y,
-        [
-          { x: 28, y: 22 },
-          { x: 28, y: 24 },
-          { x: 26, y: 24 },
-          { x: 24, y: 27 },
-          { x: 23, y: 28 },
-          // { x: 23, y: 31 },
-          // { x: 25, y: 31 },
-          // { x: 25, y: 30 },
-          // { x: 25, y: 29 },
-          // { x: 25, y: 28 },
-          // { x: 26, y: 27 },
-          // { x: 27, y: 26 },
-          // { x: 29, y: 25 },
-          // { x: 31, y: 24 },
-          // { x: 31, y: 23 },
-        ],
+        centroid.x,
+        centroid.y,
+        vertices, // vertices.length 20 넘기면 오류 발생
         { isStatic: true },
         false,
         0.01,
         1,
       );
-      console.log('make zone poly', zone);
-
       graphics.fillPoints(vertices, true);
     }
+    zone.label = label;
     return zone;
   });
 };
-
+function calculateCentroid(points: { x: number; y: number }[]): {
+  x: number;
+  y: number;
+} {
+  const { x, y } = points.reduce(
+    (accumulator, point) => ({
+      x: accumulator.x + point.x,
+      y: accumulator.y + point.y,
+    }),
+    { x: 0, y: 0 },
+  );
+  return {
+    x: x / points.length,
+    y: y / points.length,
+  };
+}
 export const playMoveAnim = (char, spriteKey: string) => {
   if (char.body.velocity.x < 0) {
     char.anims.play(`${spriteKey}-left`, true);

@@ -3,7 +3,7 @@ import { defaultTextStyle } from '@/constants';
 import Phaser from 'phaser';
 
 export class Player extends Phaser.Physics.Matter.Sprite {
-  moveSpeed = 0.5;
+  moveSpeed = 1;
   frameNo: number;
   spriteKey: string;
 
@@ -27,7 +27,13 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     scene: Phaser.Scene,
     { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer, inLobby = false },
   ) {
-    super(scene.matter.world, x, y, spriteKey, frameNo);
+    super(scene.matter.world, x, y, spriteKey, frameNo, {
+      shape: {
+        type: 'rectangle',
+        width: 10,
+        height: 8,
+      },
+    });
     this.uuid = uuid;
     this.nick = nick;
     this.isMyPlayer = isMyPlayer;
@@ -35,8 +41,12 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     this.spriteKey = spriteKey;
     this.inLobby = inLobby;
 
-    this.setSize(this.width - 6, this.height - 8).setAngularVelocity(0);
-
+    scene.add.existing(this);
+    this.setStatic(false)
+      .setAngularVelocity(0)
+      .setFixedRotation()
+      .setIgnoreGravity(true)
+      .setDepth(9);
     this.anims.create({
       key: `${spriteKey}_move${frameNo}`,
       frames: this.anims.generateFrameNames(spriteKey, {
@@ -45,8 +55,6 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       frameRate: this.moveSpeed / 20,
     });
 
-    scene.add.existing(this);
-    this.setDepth(9);
     this.nickText = new Phaser.GameObjects.Text(
       scene,
       0,
@@ -71,36 +79,11 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     this.updatePlayerInZone();
   }
   moveToXY(x: number, y: number) {
-    // if (invert) {
-    //   this.scene.physics.velocityFromRotation(
-    //     Phaser.Math.Angle.Between(x, y, this.x, this.y),
-    //     this.moveSpeed,
-    //     this.body.velocity as Phaser.Math.Vector2,
-    //   );
-    // } else {
-    //   // this.scene.physics.moveToObject(this, this.targetToMove, this.moveSpeed);
-    // }
     this.targetToMove = new Phaser.Math.Vector2(x, y);
-    // const angle = Phaser.Math.Angle.Between(x, y, this.x, this.y);
-    // this.scene.matter.body.setVelocity(this.body as MatterJS.BodyType, {
-    //   x: x - this.x,
-    //   y: y - this.y,
-    // });
-    const dx = x - this.x;
-    const dy = y - this.y;
-    const angle = Math.atan2(dy, dx);
+    const angle = Math.atan2(y - this.y, x - this.x);
     const speedX = this.moveSpeed * Math.cos(angle);
     const speedY = this.moveSpeed * Math.sin(angle);
-
-    // this.scene.matter.body.setVelocity(this.body as MatterJS.BodyType, {
-    //   x: speedX,
-    //   y: speedY,
-    // });
     this.setVelocity(speedX, speedY);
-    // this.setAngle(
-    //   Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(x, y, this.x, this.y)),
-    // );
-    // this.setAngle(angle);
     this.flipSpriteByDirection();
     this.anims.play(`${this.spriteKey}_move${this.frameNo}`, true);
   }
@@ -176,30 +159,8 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       }
     }
   }
-  isPlayerInZone(
-    zone: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Polygon)[],
-  ) {
-    return zone.some((z) => {
-      if (z.geom.type === Phaser.Geom.POLYGON) {
-        const polygon = new Phaser.Geom.Polygon(
-          z.geom.points.map(
-            (point) => new Phaser.Geom.Point(point.x + z.x, point.y + z.y),
-          ),
-        );
-        const contain = Phaser.Geom.Polygon.ContainsPoint(
-          polygon,
-          new Phaser.Geom.Point(this.x, this.y),
-        );
-        return contain;
-      }
-      if (z.geom.type === Phaser.Geom.RECTANGLE) {
-        return Phaser.Geom.Rectangle.ContainsPoint(
-          z.geom as Phaser.Geom.Rectangle,
-          new Phaser.Geom.Point(this.x, this.y),
-        );
-      }
-      return false;
-    });
+  isPlayerInZone(zone: Phaser.Types.Physics.Matter.MatterBody[]) {
+    return this.scene.matter.overlap(this, zone);
   }
   isPlayerInNonstopZone() {
     return this.isPlayerInZone((this.scene as InGameScene).nonstopZone);
