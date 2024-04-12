@@ -1,6 +1,6 @@
 export const defaultTextStyle = {
   fontFamily: 'Sans Serif',
-  fontSize: 8,
+  fontSize: 16,
   color: '#000000',
   fontStyle: 'bold',
   stroke: '#ffffff',

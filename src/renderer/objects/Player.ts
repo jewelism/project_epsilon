@@ -1,9 +1,9 @@
+import Phaser from 'phaser';
 import { type InGameScene } from '@/scenes/InGameScene';
 import { defaultTextStyle } from '@/constants';
-import Phaser from 'phaser';
 
 export class Player extends Phaser.Physics.Matter.Sprite {
-  moveSpeed = 1;
+  moveSpeed = 0.75;
   frameNo: number;
   spriteKey: string;
 
@@ -54,7 +54,8 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       defaultTextStyle,
     )
       .setOrigin(0.5, 1.5)
-      .setAlpha(0.75);
+      .setAlpha(0.75)
+      .setScale(0.5);
     scene.add.existing(this);
     scene.add.existing(this.nickText);
   }
