@@ -1,3 +1,5 @@
+import { type Player } from '@/objects/Player';
+
 export const makeZone = (
   scene: Phaser.Scene,
   zonePoints: Phaser.Types.Tilemaps.TiledObject[],
@@ -115,3 +117,15 @@ export const moveRandomlyWithinRange = (
     moveRandomlyWithinRange(scene, targets, x, width, y, height, duration);
   });
 };
+
+export function createBreakInPlayers(dataPlayer: Player[]) {
+  const newPlayers = dataPlayer.filter(
+    ({ uuid }) => !this.players.some((p) => p.uuid === uuid),
+  );
+  if (newPlayers.length > 0) {
+    this.players = [
+      ...this.players,
+      ...newPlayers.map((p) => this.createPlayer(p)),
+    ];
+  }
+}

@@ -46,6 +46,7 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       }),
       frameRate: this.moveSpeed / 20,
     });
+
     this.nickText = new Phaser.GameObjects.Text(
       scene,
       0,
@@ -163,5 +164,10 @@ export class Player extends Phaser.Physics.Matter.Sprite {
   }
   isPlayerInInvertZone() {
     return this.isPlayerInZone((this.scene as InGameScene).invertZone);
+  }
+  destroy() {
+    this.deadTweens?.stop();
+    this.nickText.destroy();
+    super.destroy();
   }
 }

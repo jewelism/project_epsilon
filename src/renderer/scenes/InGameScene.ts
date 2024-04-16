@@ -1,5 +1,6 @@
 /* eslint-disable import/no-cycle */
 /* eslint-disable no-underscore-dangle */
+import Phaser from 'phaser';
 import { KEYBOARD_KEYS, ZONE_KEYS } from '@/constants';
 import { Obstacle } from '@/objects/Obstacle';
 import { Player } from '@/objects/Player';
@@ -10,7 +11,6 @@ import {
   mouseClickEffect,
   moveRandomlyWithinRange,
 } from '@/utils/helper';
-import Phaser from 'phaser';
 import PixelAnimals from '@/public/pixel_animals.png';
 import TinySki from '@/public/tiled/tiny_ski.png';
 import map1 from '@/public/tiled/map_1.json';
@@ -42,6 +42,7 @@ export class InGameScene extends Phaser.Scene {
   nonstopZone: MatterJS.BodyType[];
   straightZone: MatterJS.BodyType[];
   invertZone: MatterJS.BodyType[];
+  speedZone: MatterJS.BodyType[];
   clearZone: MatterJS.BodyType[];
   collisions: MatterJS.BodyType[];
 
@@ -63,6 +64,10 @@ export class InGameScene extends Phaser.Scene {
     this.invertZone = makeZone(this, zonePoints.invert, {
       color: 0xffffff,
       label: 'invert',
+    });
+    this.speedZone = makeZone(this, zonePoints.speed, {
+      color: 0xffffff,
+      label: 'speed',
     });
     this.clearZone = makeZone(this, zonePoints.clear, {
       color: 0xffffff,
@@ -114,6 +119,9 @@ export class InGameScene extends Phaser.Scene {
         return;
       }
       const deadPlayer = [bodyA, bodyB].find(({ disabled }) => disabled);
+      if (!deadPlayer) {
+        return;
+      }
       this.initialData.ws.sendJson({
         uuid: deadPlayer.uuid,
         type: 'resurrection',
@@ -137,6 +145,7 @@ export class InGameScene extends Phaser.Scene {
           uuid: this.player.uuid,
           nick: this.player.nick,
           type: 'clear',
+          stage: this.initialData.stage + 1,
         });
       }
     });
@@ -156,7 +165,6 @@ export class InGameScene extends Phaser.Scene {
       return;
     }
     const player = this.getPlayerByUuid(data.uuid);
-    // TODO: 플레이어1이 dead인상태에서 player2가 접속하면 player1이 dead tint와 dead tweens가 안보이는 문제
     const dataManager = {
       move: () => {
         if (!player) {
@@ -187,22 +195,38 @@ export class InGameScene extends Phaser.Scene {
         this.onStageClear(player.nick);
       },
       players: () => {
-        const dataPlayerUuids = new Set(data.players.map(({ uuid }) => uuid));
-        this.players.forEach((p) => {
-          if (!dataPlayerUuids.has(p.uuid)) {
-            p.destroy();
+        const playerDisconnectionCheck = () => {
+          const dataPlayerUuids = new Set(data.players.map(({ uuid }) => uuid));
+          this.players.forEach((p) => {
+            if (!dataPlayerUuids.has(p.uuid)) {
+              p.destroy();
+            }
+          });
+          this.players = this.players.filter((p) =>
+            dataPlayerUuids.has(p.uuid),
+          );
+          this.initialData.players = this.players.map(
+            ({ uuid, nick, frameNo }) => ({
+              uuid,
+              nick,
+              frameNo,
+            }),
+          );
+        };
+        playerDisconnectionCheck();
+        const newPlayerConnectionCheck = () => {
+          const newPlayers = data.players.filter(
+            ({ uuid }) => !this.players.some((p) => p.uuid === uuid),
+          );
+          if (newPlayers.length > 0) {
+            this.initialData.players = [
+              ...this.initialData.players,
+              ...newPlayers,
+            ];
           }
-        });
-        this.players = this.players.filter((p) => dataPlayerUuids.has(p.uuid));
-        const newPlayers = data.players.filter(
-          ({ uuid }) => !this.players.some((p) => p.uuid === uuid),
-        );
-        if (newPlayers.length > 0) {
-          this.players = [
-            ...this.players,
-            ...newPlayers.map((p) => this.createPlayer(p)),
-          ];
-        }
+        };
+        newPlayerConnectionCheck();
+        window.electron.store.set('players', this.initialData.players);
       },
       rtt: () => {
         (this.scene.get('InGameUIScene') as InGameUIScene).pingText.setText(
@@ -486,8 +510,7 @@ export class InGameScene extends Phaser.Scene {
     if (this.initialData.stage === GAME.TOTAL_STAGE) {
       inGameUIScene.centerTextOn(`Final Stage Clear by ${clearNick}!`);
       this.prepareNextStage(() => {
-        inGameUIScene.scene.start('StartScene');
-        inGameUIScene.scene.remove();
+        inGameUIScene.onExit();
       });
     } else {
       inGameUIScene.centerTextOn(`Stage Clear by ${clearNick}!`);
@@ -503,7 +526,7 @@ export class InGameScene extends Phaser.Scene {
     const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
     inGameUIScene.centerTextOn('Game Over!');
     this.prepareNextStage(() => {
-      this.scene.start('InGameScene');
+      inGameUIScene.onExit();
     });
   }
   shutdown() {
@@ -529,7 +552,7 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data) {
     this.initialData = {
-      players: JSON.parse(window.electron.store.get('players') || '[]') as {
+      players: (window.electron.store.get('players') || []) as {
         uuid: string;
         nick: string;
         frameNo: number;
@@ -540,7 +563,5 @@ export class InGameScene extends Phaser.Scene {
     };
   }
 }
-// TODO: 게임 중간에 난입하게되면, 움직이는 객체들의 위치가 동기화가 안되는 문제가 있음.
+// TODO: 게임 중간에 난입하게되면, 움직이는 객체들의 위치가 동기화가 안되는 문제가 있음. 새로운 스테이지 시작시 난입하도록.
 // dead 상태의 플레이어도 동기화 안됨.
-// 난입을 막는다? 새로운 스테이지 시작시 난입하도록 변경? 이러면 게이머의 경험을 해칠 수 있음.
-// 동기화는.. 귀찮다..

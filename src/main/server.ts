@@ -123,6 +123,9 @@ export const openServer = ({ port }) => {
     move: ({ message }) => {
       broadcast(message);
     },
+    clear: ({ message }) => {
+      broadcast({ ...message, players: getPlayersForClient() });
+    },
   };
 
   const findPlayerWsByUuid = (uuid: string) => {

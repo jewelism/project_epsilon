@@ -12,6 +12,11 @@ type MultiplayLobbyProps = {
   ipAddrInput: string;
   setCurrentView: (view: string) => void;
 };
+type Player = {
+  uuid: string;
+  frameNo: number;
+  nick: string;
+};
 export function MultiplayLobby({
   isHost,
   nickInput,
@@ -21,7 +26,7 @@ export function MultiplayLobby({
 }: MultiplayLobbyProps) {
   const [infoText, setInfoText] = useState('');
   const [gameStartLoading, setGameStartLoading] = useState(false);
-  const [players, setPlayers] = useState([] as any[]);
+  const [players, setPlayers] = useState<Player[]>([]);
   // eslint-disable-next-line no-undef
   const retryRef = useRef();
   let alreadyStarted = false;
@@ -37,10 +42,10 @@ export function MultiplayLobby({
     setCurrentView('MainMenu');
   };
 
-  const gameStart = (receivedPlayers) => {
+  const gameStart = (receivedPlayers: Player[], stage = '1') => {
     setGameStartLoading(true);
-    window.electron.store.set('players', JSON.stringify(receivedPlayers));
-    window.electron.store.set('stage', '1');
+    window.electron.store.set('players', receivedPlayers);
+    window.electron.store.set('stage', stage);
     createGame();
     setGameStartLoading(false);
     closeMenuApp();
@@ -63,8 +68,11 @@ export function MultiplayLobby({
     players: (data) => {
       setPlayers(data.players);
       if (alreadyStarted) {
-        gameStart(data.players);
+        setInfoText('Game already started. wait for next round');
       }
+    },
+    clear: (data) => {
+      gameStart(data.players, data.stage);
     },
   };
 
@@ -75,8 +83,6 @@ export function MultiplayLobby({
     const data = JSON.parse(event.data as any);
     if (data.type in dataManager) {
       dataManager[data.type](data);
-    } else {
-      console.error('unknown data type', data);
     }
   };
 
@@ -113,8 +119,6 @@ export function MultiplayLobby({
 
   useEffect(() => {
     return () => {
-      console.log('cleanup');
-
       clearTimeout(retryRef.current);
       window.ws.removeEventListener('message', wsMessageListener);
       window.ws.removeEventListener('error', wsOnError);
