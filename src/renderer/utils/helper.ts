@@ -94,30 +94,6 @@ export const mouseClickEffect = (
   });
 };
 
-export const moveRandomlyWithinRange = (
-  scene: Phaser.Scene,
-  targets: Phaser.GameObjects.GameObject,
-  x: number,
-  width: number,
-  y: number,
-  height: number,
-  duration: number,
-) => {
-  const newX = Phaser.Math.Between(x, x + width);
-  const newY = Phaser.Math.Between(y, y + height);
-
-  const tween = scene.tweens.add({
-    targets,
-    x: newX,
-    y: newY,
-    duration,
-  });
-
-  tween.on('complete', () => {
-    moveRandomlyWithinRange(scene, targets, x, width, y, height, duration);
-  });
-};
-
 export function createBreakInPlayers(dataPlayer: Player[]) {
   const newPlayers = dataPlayer.filter(
     ({ uuid }) => !this.players.some((p) => p.uuid === uuid),

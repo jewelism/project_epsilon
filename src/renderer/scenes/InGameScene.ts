@@ -6,17 +6,12 @@ import { Obstacle } from '@/objects/Obstacle';
 import { Player } from '@/objects/Player';
 import { type InGameUIScene } from '@/scenes/InGameUIScene';
 import { openMenuApp, removeGame, type CustomWebSocket } from '@/index';
-import {
-  makeZone,
-  mouseClickEffect,
-  moveRandomlyWithinRange,
-} from '@/utils/helper';
+import { makeZone, mouseClickEffect } from '@/utils/helper';
 import PixelAnimals from '@/public/pixel_animals.png';
 import TinySki from '@/public/tiled/tiny_ski.png';
 import TinyKenny from '@/public/tiled/tiny_kenny.png';
 import map1 from '@/public/tiled/map_1.json';
 import map2 from '@/public/tiled/map_2.json';
-import { getDuration } from '@/utils';
 
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
@@ -384,6 +379,7 @@ export class InGameScene extends Phaser.Scene {
       map.filterObjects('obstaclesRandom', () => true),
     );
     this.createStopObstacle(map.filterObjects('obstacles', () => true));
+    this.createFireObstacle(map.filterObjects('obstaclesFire', () => true));
 
     scene.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
@@ -436,6 +432,10 @@ export class InGameScene extends Phaser.Scene {
   ) {
     const obstacles = randomMovingObstacles.map(
       ({ x, y, width, height, properties }) => {
+        const moveSpeed =
+          properties?.find(({ name }) => name === 'moveSpeed')?.value ?? 1;
+        const delay =
+          properties?.find(({ name }) => name === 'delay')?.value ?? 1000;
         const obstacle = new Obstacle(this, {
           x,
           y,
@@ -443,16 +443,17 @@ export class InGameScene extends Phaser.Scene {
           height: 8,
           spriteKey: 'pixel_animals',
           frameNo: 3,
+          moveSpeed,
         });
-        moveRandomlyWithinRange(
-          this,
-          obstacle,
-          x,
-          width,
-          y,
-          height,
-          properties.find(({ name }) => name === 'duration').value,
-        );
+        this.time.addEvent({
+          loop: true,
+          delay,
+          callback: () => {
+            const newX = Phaser.Math.Between(x, x + width);
+            const newY = Phaser.Math.Between(y, y + height);
+            obstacle.moveToXY(newX, newY);
+          },
+        });
         return obstacle;
       },
     );
@@ -461,19 +462,44 @@ export class InGameScene extends Phaser.Scene {
   createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     const obstacles = stopObstacles.map(({ x, y, width, height }) => {
       const obstacle = new Obstacle(this, {
-        x,
-        y,
-        width: width - width / 3,
-        height: height - height / 3,
+        x: x + width / 2,
+        y: y + height / 2,
+        width: 10,
+        height: 8,
         spriteKey: 'pixel_animals',
         frameNo: 0,
       });
-      obstacle.setDisplaySize(width, height);
       return obstacle;
     });
     this.obstacles = [...this.obstacles, ...obstacles];
   }
   createFireObstacle(fireObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
+    fireObstacles.forEach(({ x, y, height }) => {
+      const createFire = () => {
+        const obstacle = new Obstacle(this, {
+          x: x + 4,
+          y: y + 4,
+          width: 8,
+          height: 10,
+          spriteKey: 'tiny_kenny',
+          frameNo: 12,
+        }).setAngle(180);
+        this.obstacles = [...this.obstacles, obstacle];
+        const tween = this.tweens.add({
+          targets: obstacle,
+          duration: 500,
+          repeat: -1,
+          y: y + height - 4,
+        });
+        tween.on('complete', () => {
+          obstacle.destroy();
+          this.obstacles = [...this.obstacles.filter((o) => o !== obstacle)];
+          createFire();
+        });
+      };
+      createFire();
+    });
+  }
   prepareNextStage(afterShutdown) {
     this.scene.stop();
     const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;

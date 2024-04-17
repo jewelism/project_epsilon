@@ -157,48 +157,58 @@
          "name":"obstaclesRandom",
          "objects":[
                 {
-                 "height":59.5531961840971,
-                 "id":542,
-                 "name":"random_obstacle",
-                 "properties":[
-                        {
-                         "name":"duration",
-                         "type":"int",
-                         "value":1500
-                        }, 
-                        {
-                         "name":"isRandomMove",
-                         "type":"bool",
-                         "value":true
-                        }],
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":73.9802258199449,
-                 "x":19.481783851093,
-                 "y":226.481657589349
-                }, 
-                {
-                 "height":63.347271729879,
+                 "height":68.4913046516897,
                  "id":533,
                  "name":"random_obstacle",
                  "properties":[
                         {
-                         "name":"duration",
+                         "name":"delay",
                          "type":"int",
-                         "value":1250
+                         "value":250
                         }, 
                         {
                          "name":"isRandomMove",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"moveSpeed",
+                         "type":"float",
+                         "value":0.5
                         }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":80.090075538931,
-                 "x":16.1008776360959,
-                 "y":319.670850066185
+                 "width":74.4784032605921,
+                 "x":21.7125499144348,
+                 "y":309.382784222564
+                }, 
+                {
+                 "height":58.6179174710406,
+                 "id":542,
+                 "name":"random_obstacle",
+                 "properties":[
+                        {
+                         "name":"delay",
+                         "type":"int",
+                         "value":500
+                        }, 
+                        {
+                         "name":"isRandomMove",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"moveSpeed",
+                         "type":"float",
+                         "value":0.7
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":74.4478651764732,
+                 "x":19.0141444945647,
+                 "y":226.481657589349
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -329,7 +339,40 @@
          "draworder":"topdown",
          "id":20,
          "name":"obstacles",
-         "objects":[],
+         "objects":[
+                {
+                 "height":16,
+                 "id":546,
+                 "name":"ob",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":64,
+                 "y":144
+                }, 
+                {
+                 "height":16,
+                 "id":547,
+                 "name":"ob",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":30.8140665918444,
+                 "y":111.715675271231
+                }, 
+                {
+                 "height":16,
+                 "id":548,
+                 "name":"ob",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":32,
+                 "y":176
+                }],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -358,8 +401,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":22,
- "nextobjectid":544,
+ "nextlayerid":23,
+ "nextobjectid":549,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
