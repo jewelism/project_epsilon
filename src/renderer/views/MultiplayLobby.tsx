@@ -106,15 +106,29 @@ export function MultiplayLobby({
 
   const getSocketConnection = async () => {
     setInfoText('try to connect...');
-    const address = `ws://${ipAddrInput}`;
-    window.ws = (await new WebSocket(address)) as CustomWebSocket;
-    window.ws.addEventListener('error', wsOnError);
-    window.ws.addEventListener('open', wsOnOpen);
-    window.ws.addEventListener('close', wsOnClose);
+    try {
+      window.ws = (await new WebSocket(
+        `ws://${ipAddrInput}`,
+      )) as CustomWebSocket;
+      window.ws.addEventListener('error', wsOnError);
+      window.ws.addEventListener('open', wsOnOpen);
+      window.ws.addEventListener('close', wsOnClose);
+    } catch (e) {
+      console.warn(e);
+    }
   };
 
   useEffect(() => {
     getSocketConnection();
+    const onEscKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClickExit();
+      }
+    };
+    window.addEventListener('keydown', onEscKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onEscKeyDown);
+    };
   }, []);
 
   useEffect(() => {

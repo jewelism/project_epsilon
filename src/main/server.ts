@@ -123,6 +123,9 @@ export const openServer = ({ port }) => {
     move: ({ message }) => {
       broadcast(message);
     },
+    dead: ({ message }) => {
+      broadcast(message);
+    },
     clear: ({ message }) => {
       broadcast({ ...message, players: getPlayersForClient() });
     },

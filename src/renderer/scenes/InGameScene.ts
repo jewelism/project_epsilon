@@ -13,8 +13,10 @@ import {
 } from '@/utils/helper';
 import PixelAnimals from '@/public/pixel_animals.png';
 import TinySki from '@/public/tiled/tiny_ski.png';
+import TinyKenny from '@/public/tiled/tiny_kenny.png';
 import map1 from '@/public/tiled/map_1.json';
 import map2 from '@/public/tiled/map_2.json';
+import { getDuration } from '@/utils';
 
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
@@ -364,8 +366,10 @@ export class InGameScene extends Phaser.Scene {
       key: `map_${this.initialData.stage}`,
     });
     const bgTiles = map.addTilesetImage('tiny_ski', 'tiny_ski');
-    const bgLayer = map.createLayer('bg', bgTiles);
-    map.createLayer('bg_items', bgTiles);
+    const kennyTiles = map.addTilesetImage('tiny_kenny', 'tiny_kenny');
+    const bgLayer = map.createLayer('bg', [bgTiles, kennyTiles]);
+    map.createLayer('bg_items', [bgTiles, kennyTiles]);
+
     this.createCollisions(scene, bgLayer);
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
     const zonePoints = Object.fromEntries(
@@ -375,28 +379,11 @@ export class InGameScene extends Phaser.Scene {
       ]),
     ) as ZonePointsType;
 
-    const obstacleSpawnPoints = map.filterObjects('ObstacleSpawn', () => true);
-    const movingObstacles = obstacleSpawnPoints.filter(({ properties }) => {
-      if (properties.find(({ name }) => name === 'isRandomMove')) {
-        return false;
-      }
-      return properties?.find(({ name }) => name === 'isMove')?.value;
-    });
-    const randomMovingObstacles = obstacleSpawnPoints.filter(
-      ({ properties }) =>
-        properties?.find(({ name }) => {
-          return name === 'isRandomMove';
-        })?.value,
+    this.createMovingObstacles(map.filterObjects('obstaclesMove', () => true));
+    this.createRandomMoveObstacle(
+      map.filterObjects('obstaclesRandom', () => true),
     );
-    const stopObstacles = obstacleSpawnPoints.filter(({ properties }) => {
-      if (properties.find(({ name }) => name === 'isRandomMove')) {
-        return false;
-      }
-      return !properties?.find(({ name }) => name === 'isMove')?.value;
-    });
-    this.createMovingObstacles(movingObstacles);
-    this.createRandomMoveObstacle(randomMovingObstacles);
-    this.createStopObstacle(stopObstacles);
+    this.createStopObstacle(map.filterObjects('obstacles', () => true));
 
     scene.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
@@ -420,6 +407,8 @@ export class InGameScene extends Phaser.Scene {
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     const obstacles = movingObstacles.map(
       ({ x, y, width, height, properties }) => {
+        const moveSpeed =
+          properties?.find(({ name }) => name === 'moveSpeed')?.value ?? 1;
         const obstacle = new Obstacle(this, {
           x,
           y,
@@ -427,28 +416,16 @@ export class InGameScene extends Phaser.Scene {
           height: 8,
           spriteKey: 'pixel_animals',
           frameNo: 2,
+          moveSpeed,
         });
         const isHorizontal = properties?.find(
           ({ name }) => name === 'isHorizontal',
         )?.value;
-        const tweens = {
-          targets: obstacle,
-          duration:
-            properties?.find(({ name }) => name === 'duration')?.value ?? 2000,
-          yoyo: true,
-          repeat: -1,
-        };
-        if (isHorizontal) {
-          this.tweens.add({
-            ...tweens,
-            x: x + width,
-          });
-        } else {
-          this.tweens.add({
-            ...tweens,
-            y: y + height,
-          });
-        }
+        obstacle.roundTrip(
+          new Phaser.Math.Vector2(
+            isHorizontal ? { x: x + width, y } : { x, y: y + height },
+          ),
+        );
         return obstacle;
       },
     );
@@ -496,6 +473,7 @@ export class InGameScene extends Phaser.Scene {
     });
     this.obstacles = [...this.obstacles, ...obstacles];
   }
+  createFireObstacle(fireObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
   prepareNextStage(afterShutdown) {
     this.scene.stop();
     const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
@@ -526,7 +504,7 @@ export class InGameScene extends Phaser.Scene {
     const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
     inGameUIScene.centerTextOn('Game Over!');
     this.prepareNextStage(() => {
-      inGameUIScene.onExit();
+      this.scene.restart();
     });
   }
   shutdown() {
@@ -545,6 +523,10 @@ export class InGameScene extends Phaser.Scene {
     this.load.tilemapTiledJSON('map_1', map1);
     this.load.tilemapTiledJSON('map_2', map2);
     this.load.image('tiny_ski', TinySki);
+    this.load.spritesheet('tiny_kenny', TinyKenny, {
+      frameWidth: 16,
+      frameHeight: 16,
+    });
     this.load.spritesheet('pixel_animals', PixelAnimals, {
       frameWidth: 16,
       frameHeight: 16,
