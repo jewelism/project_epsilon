@@ -13,13 +13,15 @@ import TinyKenny from '@/public/tiled/tiny_kenny.png';
 import map1 from '@/public/tiled/map_1.json';
 import map2 from '@/public/tiled/map_2.json';
 
+const MAPS = [map1, map2] as const;
+
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
   Phaser.Types.Tilemaps.TiledObject[]
 >;
 
 export const GAME = {
-  TOTAL_STAGE: 2,
+  TOTAL_STAGE: MAPS.length,
   ZOOM: Number(window.electron.store.get('ZOOM')) || 2,
   RTT: 100,
 };
@@ -55,21 +57,18 @@ export class InGameScene extends Phaser.Scene {
       label: 'nonstop',
     });
     this.straightZone = makeZone(this, zonePoints.straight, {
-      color: 0x00ffff,
+      color: 0x000fff,
       label: 'straight',
     });
     this.invertZone = makeZone(this, zonePoints.invert, {
-      color: 0xffffff,
+      color: 0x0000ff,
       label: 'invert',
     });
     this.speedZone = makeZone(this, zonePoints.speed, {
-      color: 0xffffff,
+      color: 0x00000f,
       label: 'speed',
     });
-    this.clearZone = makeZone(this, zonePoints.clear, {
-      color: 0xffffff,
-      label: 'clear',
-    });
+    this.clearZone = makeZone(this, zonePoints.clear, { label: 'clear' });
 
     await this.createSocketConnection();
     this.createPlayers();
@@ -474,7 +473,9 @@ export class InGameScene extends Phaser.Scene {
     this.obstacles = [...this.obstacles, ...obstacles];
   }
   createFireObstacle(fireObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
-    fireObstacles.forEach(({ x, y, height }) => {
+    fireObstacles.forEach(({ x, y, height, properties }) => {
+      const duration = properties?.find(({ name }) => name === 'duration')
+        ?.value;
       const createFire = () => {
         const obstacle = new Obstacle(this, {
           x: x + 4,
@@ -487,7 +488,7 @@ export class InGameScene extends Phaser.Scene {
         this.obstacles = [...this.obstacles, obstacle];
         const tween = this.tweens.add({
           targets: obstacle,
-          duration: 500,
+          duration,
           repeat: -1,
           y: y + height - 4,
         });
@@ -546,8 +547,9 @@ export class InGameScene extends Phaser.Scene {
     super('InGameScene');
   }
   preload() {
-    this.load.tilemapTiledJSON('map_1', map1);
-    this.load.tilemapTiledJSON('map_2', map2);
+    Array.from(MAPS).forEach((map, i) => {
+      this.load.tilemapTiledJSON(`map_${i + 1}`, map);
+    });
     this.load.image('tiny_ski', TinySki);
     this.load.spritesheet('tiny_kenny', TinyKenny, {
       frameWidth: 16,
