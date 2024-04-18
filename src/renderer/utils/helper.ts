@@ -1,5 +1,22 @@
 import { type Player } from '@/objects/Player';
 
+function calculateCentroid(points: { x: number; y: number }[]): {
+  x: number;
+  y: number;
+} {
+  const { x, y } = points.reduce(
+    (accumulator, point) => ({
+      x: accumulator.x + point.x,
+      y: accumulator.y + point.y,
+    }),
+    { x: 0, y: 0 },
+  );
+  return {
+    x: x / points.length,
+    y: y / points.length,
+  };
+}
+
 export const makeZone = (
   scene: Phaser.Scene,
   zonePoints: Phaser.Types.Tilemaps.TiledObject[],
@@ -26,16 +43,15 @@ export const makeZone = (
         x: Math.floor(vertex.x + x),
         y: Math.floor(vertex.y + y),
       }));
-      // eslint-disable-next-line no-use-before-define
       const centroid = calculateCentroid(vertices);
       zone = scene.matter.add.fromVertices(
         centroid.x,
         centroid.y,
         vertices, // vertices.length 20 넘기면 오류 발생
         { isSensor: true },
-        false,
-        0.01,
-        0.01,
+        true,
+        0.001,
+        0.001,
       );
       graphics?.fillPoints(vertices, true);
     }
@@ -43,22 +59,7 @@ export const makeZone = (
     return zone;
   });
 };
-function calculateCentroid(points: { x: number; y: number }[]): {
-  x: number;
-  y: number;
-} {
-  const { x, y } = points.reduce(
-    (accumulator, point) => ({
-      x: accumulator.x + point.x,
-      y: accumulator.y + point.y,
-    }),
-    { x: 0, y: 0 },
-  );
-  return {
-    x: x / points.length,
-    y: y / points.length,
-  };
-}
+
 export const playMoveAnim = (char, spriteKey: string) => {
   if (char.body.velocity.x < 0) {
     char.anims.play(`${spriteKey}-left`, true);

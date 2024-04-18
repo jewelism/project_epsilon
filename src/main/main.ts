@@ -139,6 +139,7 @@ app.on('before-quit', () => {
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
+  closeServer();
   if (process.platform !== 'darwin') {
     app.quit();
   }

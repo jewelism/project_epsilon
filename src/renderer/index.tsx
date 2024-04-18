@@ -78,3 +78,7 @@ export const removeGame = () => {
   APP.game?.destroy(true);
   APP.game = null;
 };
+
+window.addEventListener('beforeunload', () => {
+  window.electron.ipcRenderer.sendMessage('closeServer');
+});

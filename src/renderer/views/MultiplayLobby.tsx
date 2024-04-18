@@ -26,14 +26,16 @@ export function MultiplayLobby({
 }: MultiplayLobbyProps) {
   const [infoText, setInfoText] = useState('');
   const [gameStartLoading, setGameStartLoading] = useState(false);
+  const [readyToStart, setReadyToStart] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
+
   // eslint-disable-next-line no-undef
-  const retryRef = useRef();
+  const retryRef = useRef<NodeJS.Timeout>();
   let alreadyStarted = false;
 
   const onClickMultiplayStart = () => {
     setGameStartLoading(true);
-    window.ws.sendJson({ type: 'gameStart', players });
+    window.ws.sendJson({ type: 'gameStart' });
   };
 
   const onClickExit = () => {
@@ -42,9 +44,8 @@ export function MultiplayLobby({
     setCurrentView('MainMenu');
   };
 
-  const gameStart = (receivedPlayers: Player[], stage = '1') => {
+  const gameStart = (stage = '1') => {
     setGameStartLoading(true);
-    window.electron.store.set('players', receivedPlayers);
     window.electron.store.set('stage', stage);
     createGame();
     setGameStartLoading(false);
@@ -62,17 +63,20 @@ export function MultiplayLobby({
       });
       alreadyStarted = data.started;
     },
-    gameStart: (data) => {
-      gameStart(data.players);
+    gameStart: () => {
+      gameStart();
     },
     players: (data) => {
       setPlayers(data.players);
+      window.electron.store.set('players', data.players);
+
+      setReadyToStart(data.players.length > 0);
       if (alreadyStarted) {
         setInfoText('Game already started. wait for next round');
       }
     },
     clear: (data) => {
-      gameStart(data.players, data.stage);
+      gameStart(data.stage);
     },
   };
 
@@ -94,13 +98,11 @@ export function MultiplayLobby({
     );
   };
   const wsOnClose = () => {
-    setCurrentView('MainMenu');
-    alert('connection closed');
+    setInfoText('connection failed');
   };
   const wsOnError = () => {
-    setInfoText(`connection failed`);
+    setInfoText(`connection error`);
     clearTimeout(retryRef.current);
-    // @ts-ignore
     retryRef.current = setTimeout(getSocketConnection, 3000);
   };
 
@@ -123,6 +125,9 @@ export function MultiplayLobby({
     const onEscKeyDown = (e) => {
       if (e.key === 'Escape') {
         onClickExit();
+      }
+      if (e.key === 'Enter' && isHost) {
+        onClickMultiplayStart();
       }
     };
     window.addEventListener('keydown', onEscKeyDown);
@@ -156,7 +161,7 @@ export function MultiplayLobby({
       </div>
       <br />
       <div className="flex-center row">
-        {!gameStartLoading && isHost && (
+        {!gameStartLoading && isHost && readyToStart && (
           <button
             type="button"
             onClick={onClickMultiplayStart}

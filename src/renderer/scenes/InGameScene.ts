@@ -573,5 +573,3 @@ export class InGameScene extends Phaser.Scene {
     };
   }
 }
-// TODO: 게임 중간에 난입하게되면, 움직이는 객체들의 위치가 동기화가 안되는 문제가 있음. 새로운 스테이지 시작시 난입하도록.
-// dead 상태의 플레이어도 동기화 안됨.

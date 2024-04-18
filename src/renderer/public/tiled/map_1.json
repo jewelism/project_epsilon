@@ -69,80 +69,71 @@
          "name":"nonstopZone",
          "objects":[
                 {
+                 "height":115.844006331846,
+                 "id":566,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":28.4213555907325,
+                 "x":154.338753777522,
+                 "y":207.943589005612
+                }, 
+                {
                  "height":0,
-                 "id":554,
-                 "name":"nonstop",
+                 "id":568,
+                 "name":"",
                  "polygon":[
                         {
                          "x":0,
                          "y":0
                         }, 
                         {
-                         "x":0,
-                         "y":42.758431962783
+                         "x":-6.71507113778486,
+                         "y":6.92491711084062
                         }, 
                         {
-                         "x":111.880999557708,
-                         "y":43.6204129138171
-                        }, 
-                        {
-                         "x":117.018942146784,
-                         "y":37.588915091858
-                        }, 
-                        {
-                         "x":117.465719763226,
-                         "y":-123.027638018831
-                        }, 
-                        {
-                         "x":111.210833133046,
-                         "y":-129.05913584079
-                        }, 
-                        {
-                         "x":-33.7685034021938,
-                         "y":-128.388969416128
-                        }, 
-                        {
-                         "x":-39.1298347994908,
-                         "y":-123.474415635273
-                        }, 
-                        {
-                         "x":-39.3532236077115,
-                         "y":-3.06784800431086
-                        }, 
-                        {
-                         "x":-9.86590092257802,
-                         "y":-2.39768157964875
-                        }, 
-                        {
-                         "x":-10.9828449636816,
-                         "y":-75.669210676041
-                        }, 
-                        {
-                         "x":-2.94084786773607,
-                         "y":-84.8281518130901
-                        }, 
-                        {
-                         "x":63.8524057902557,
-                         "y":-84.8281518130901
-                        }, 
-                        {
-                         "x":73.2347357355254,
-                         "y":-77.0095435253653
-                        }, 
-                        {
-                         "x":73.4581245437461,
-                         "y":-8.65256820982859
-                        }, 
-                        {
-                         "x":62.2886841327107,
-                         "y":-0.163793497441702
+                         "x":0.209845973055792,
+                         "y":6.92491711084062
                         }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":193.268112471779,
-                 "y":330.77922966409
+                 "x":159.692785495446,
+                 "y":201.032442187434
+                }, 
+                {
+                 "height":0,
+                 "id":569,
+                 "name":"",
+                 "polygon":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":-8.81353086834264,
+                         "y":0.209845973055792
+                        }, 
+                        {
+                         "x":-9.02337684139843,
+                         "y":9.02337684139843
+                        }, 
+                        {
+                         "x":-3.14768959583665,
+                         "y":1.67876778444622
+                        }, 
+                        {
+                         "x":0.419691946111556,
+                         "y":1.46892181139046
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":191.79921937298,
+                 "y":245.519788475259
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -556,7 +547,7 @@
          "y":0
         }],
  "nextlayerid":23,
- "nextobjectid":557,
+ "nextobjectid":570,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.10.2",
@@ -579,7 +570,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -605,7 +595,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -631,7 +620,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -657,7 +645,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -683,7 +670,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -766,7 +752,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -841,7 +826,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -904,7 +888,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -967,7 +950,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1030,7 +1012,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":3,
                      "name":"",
                      "objects":[
                             {
@@ -1081,7 +1062,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1132,7 +1112,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1195,7 +1174,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1246,7 +1224,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1297,7 +1274,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1360,7 +1336,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1423,7 +1398,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1482,7 +1456,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1545,7 +1518,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1612,7 +1584,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1671,7 +1642,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1730,7 +1700,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1785,7 +1754,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
@@ -1872,7 +1840,6 @@
                  "objectgroup":
                     {
                      "draworder":"index",
-                     "id":2,
                      "name":"",
                      "objects":[
                             {
