@@ -86,64 +86,39 @@ export class InGameScene extends Phaser.Scene {
       loop: true,
     });
 
-    this.matter.world.on('collisionstart', (_event, a, b) => {
-      const bodyA = a.gameObject;
-      const bodyB = b.gameObject;
-      const isPlayer = [bodyA, bodyB].includes(this.player);
-      if (!isPlayer) {
-        return;
-      }
-      if (
-        [a.label, b.label].includes('collision') ||
-        [bodyA, bodyB].some((body) => this.obstacles.includes(body))
-      ) {
-        if (this.player.disabled) {
-          return;
-        }
-        this.initialData.ws.sendJson({
-          uuid: this.player.uuid,
-          type: 'dead',
-          x: this.player.x.toFixed(0),
-          y: this.player.y.toFixed(0),
-        });
-      }
-    });
-    this.matter.world.on('collisionstart', (_event, a, b) => {
-      const bodyA = a.gameObject;
-      const bodyB = b.gameObject;
-      if (!(bodyA?.spriteKey && bodyB?.spriteKey)) {
-        return;
-      }
-      const deadPlayer = [bodyA, bodyB].find(({ disabled }) => disabled);
-      if (!deadPlayer) {
+    this.player.setOnCollideWith(this.collisions, () => {
+      if (this.player.disabled) {
         return;
       }
       this.initialData.ws.sendJson({
-        uuid: deadPlayer.uuid,
+        uuid: this.player.uuid,
+        type: 'dead',
+        x: this.player.x.toFixed(0),
+        y: this.player.y.toFixed(0),
+      });
+    });
+    this.player.setOnCollideWith(this.players, (player: Player) => {
+      if (!player.disabled) {
+        return;
+      }
+      this.initialData.ws.sendJson({
+        uuid: player.uuid,
         type: 'resurrection',
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
       });
     });
-    this.matter.world.on('collisionstart', (_event, a, b) => {
-      const bodyA = a.gameObject;
-      const bodyB = b.gameObject;
-      const isPlayer = [bodyA, bodyB].includes(this.player);
-      if (!isPlayer) {
+    this.player.setOnCollideWith(this.clearZone, () => {
+      if (this.player.disabled) {
         return;
       }
-      if ([a.label, b.label].includes('clear')) {
-        if (this.player.disabled) {
-          return;
-        }
-        this.player.disabled = true;
-        this.initialData.ws.sendJson({
-          uuid: this.player.uuid,
-          nick: this.player.nick,
-          type: 'clear',
-          stage: this.initialData.stage + 1,
-        });
-      }
+      this.player.disabled = true;
+      this.initialData.ws.sendJson({
+        uuid: this.player.uuid,
+        nick: this.player.nick,
+        type: 'clear',
+        stage: this.initialData.stage + 1,
+      });
     });
   }
   getPlayerByUuid = (uuid: string) => this.players.find((p) => p.uuid === uuid);
