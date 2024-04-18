@@ -6,7 +6,11 @@ import { Obstacle } from '@/objects/Obstacle';
 import { Player } from '@/objects/Player';
 import { type InGameUIScene } from '@/scenes/InGameUIScene';
 import { openMenuApp, removeGame, type CustomWebSocket } from '@/index';
-import { makeZone, mouseClickEffect } from '@/utils/helper';
+import {
+  getValueByProperties,
+  makeZone,
+  mouseClickEffect,
+} from '@/utils/helper';
 import PixelAnimals from '@/public/pixel_animals.png';
 import TinySki from '@/public/tiled/tiny_ski.png';
 import TinyKenny from '@/public/tiled/tiny_kenny.png';
@@ -377,20 +381,23 @@ export class InGameScene extends Phaser.Scene {
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     const obstacles = movingObstacles.map(
       ({ x, y, width, height, properties }) => {
-        const moveSpeed =
-          properties?.find(({ name }) => name === 'moveSpeed')?.value ?? 1;
+        const { _width, _height, moveSpeed, isHorizontal } =
+          getValueByProperties(
+            properties,
+            '_width',
+            '_height',
+            'moveSpeed',
+            'isHorizontal',
+          );
         const obstacle = new Obstacle(this, {
           x,
           y,
-          width: 10,
-          height: 8,
+          width: _width,
+          height: _height,
           spriteKey: 'pixel_animals',
           frameNo: 2,
           moveSpeed,
         });
-        const isHorizontal = properties?.find(
-          ({ name }) => name === 'isHorizontal',
-        )?.value;
         obstacle.roundTrip(
           new Phaser.Math.Vector2(
             isHorizontal ? { x: x + width, y } : { x, y: y + height },
@@ -406,15 +413,23 @@ export class InGameScene extends Phaser.Scene {
   ) {
     const obstacles = randomMovingObstacles.map(
       ({ x, y, width, height, properties }) => {
-        const moveSpeed =
-          properties?.find(({ name }) => name === 'moveSpeed')?.value ?? 1;
-        const delay =
-          properties?.find(({ name }) => name === 'delay')?.value ?? 1000;
+        const {
+          _width,
+          _height,
+          moveSpeed = 1,
+          delay = 1000,
+        } = getValueByProperties(
+          properties,
+          '_width',
+          '_height',
+          'moveSpeed',
+          'delay',
+        );
         const obstacle = new Obstacle(this, {
           x,
           y,
-          width: 10,
-          height: 8,
+          width: _width,
+          height: _height,
           spriteKey: 'pixel_animals',
           frameNo: 3,
           moveSpeed,
@@ -434,29 +449,38 @@ export class InGameScene extends Phaser.Scene {
     this.obstacles = [...this.obstacles, ...obstacles];
   }
   createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
-    const obstacles = stopObstacles.map(({ x, y, width, height }) => {
+    const obstacles = stopObstacles.map(({ x, y, properties }) => {
+      const { _width, _height, alpha } = getValueByProperties(
+        properties,
+        '_width',
+        '_height',
+        'alpha',
+      );
       const obstacle = new Obstacle(this, {
-        x: x + width / 2,
-        y: y + height / 2,
-        width: 10,
-        height: 8,
+        x,
+        y,
+        width: _width,
+        height: _height,
         spriteKey: 'pixel_animals',
         frameNo: 0,
-      });
+      }).setAlpha(alpha ?? 1);
       return obstacle;
     });
     this.obstacles = [...this.obstacles, ...obstacles];
   }
   createFireObstacle(fireObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     fireObstacles.forEach(({ x, y, height, properties }) => {
-      const duration = properties?.find(({ name }) => name === 'duration')
-        ?.value;
+      const {
+        _width,
+        _height,
+        duration = 750,
+      } = getValueByProperties(properties, '_width', '_height', 'duration');
       const createFire = () => {
         const obstacle = new Obstacle(this, {
-          x: x + 4,
-          y: y + 4,
-          width: 8,
-          height: 10,
+          x,
+          y,
+          width: _width,
+          height: _height,
           spriteKey: 'tiny_kenny',
           frameNo: 12,
         }).setAngle(180);
@@ -537,7 +561,7 @@ export class InGameScene extends Phaser.Scene {
   }
   init(data) {
     this.initialData = {
-      players: (window.electron.store.get('players') || []) as {
+      players: window.electron.store.get('players') as {
         uuid: string;
         nick: string;
         frameNo: number;
