@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import { type Player } from '@/objects/Player';
 
 function calculateCentroid(points: { x: number; y: number }[]): {
@@ -106,3 +107,11 @@ export function createBreakInPlayers(dataPlayer: Player[]) {
     ];
   }
 }
+
+export const getValueByProperties = (properties: any[], ...names) => {
+  const obj: any = {};
+  names.forEach((n) => {
+    obj[n] = properties?.find(({ name }) => name === n)?.value;
+  });
+  return obj;
+};
