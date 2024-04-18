@@ -25,13 +25,22 @@ export class Player extends Phaser.Physics.Matter.Sprite {
     scene: Phaser.Scene,
     { x, y, spriteKey, frameNo, nick, uuid, isMyPlayer },
   ) {
-    super(scene.matter.world, x, y, spriteKey, frameNo, {
-      shape: {
-        type: 'rectangle',
-        width: 10,
-        height: 8,
+    const width = 10;
+    const height = 8;
+    super(
+      scene.matter.world,
+      x + width / 2,
+      y + height / 2,
+      spriteKey,
+      frameNo,
+      {
+        shape: {
+          type: 'rectangle',
+          width,
+          height,
+        },
       },
-    });
+    );
     this.uuid = uuid;
     this.nick = nick;
     this.isMyPlayer = isMyPlayer;
