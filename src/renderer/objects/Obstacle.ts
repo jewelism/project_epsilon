@@ -25,7 +25,7 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
         },
       },
     );
-    this.basicVector = new Phaser.Math.Vector2(x, y);
+    this.basicVector = new Phaser.Math.Vector2(x + width / 2, y + height / 2);
     this.moveSpeed = moveSpeed;
     this.setSensor(true).setDepth(8).setFrictionAir(0).setFriction(0);
     scene.add.existing(this);

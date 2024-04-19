@@ -400,9 +400,28 @@ export class InGameScene extends Phaser.Scene {
         });
         obstacle.roundTrip(
           new Phaser.Math.Vector2(
-            isHorizontal ? { x: x + width, y } : { x, y: y + height },
+            isHorizontal
+              ? { x: x + width, y: y + height / 2 }
+              : { x: x + width / 2, y: y + height },
           ),
         );
+        return obstacle;
+      },
+    );
+    this.obstacles = [...this.obstacles, ...obstacles];
+  }
+  createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
+    const obstacles = stopObstacles.map(
+      ({ x, y, width, height, properties }) => {
+        const { alpha } = getValueByProperties(properties, 'alpha');
+        const obstacle = new Obstacle(this, {
+          x,
+          y,
+          width,
+          height,
+          spriteKey: 'pixel_animals',
+          frameNo: 0,
+        }).setAlpha(alpha ?? 1);
         return obstacle;
       },
     );
@@ -446,26 +465,6 @@ export class InGameScene extends Phaser.Scene {
         return obstacle;
       },
     );
-    this.obstacles = [...this.obstacles, ...obstacles];
-  }
-  createStopObstacle(stopObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
-    const obstacles = stopObstacles.map(({ x, y, properties }) => {
-      const { _width, _height, alpha } = getValueByProperties(
-        properties,
-        '_width',
-        '_height',
-        'alpha',
-      );
-      const obstacle = new Obstacle(this, {
-        x,
-        y,
-        width: _width,
-        height: _height,
-        spriteKey: 'pixel_animals',
-        frameNo: 0,
-      }).setAlpha(alpha ?? 1);
-      return obstacle;
-    });
     this.obstacles = [...this.obstacles, ...obstacles];
   }
   createFireObstacle(fireObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
