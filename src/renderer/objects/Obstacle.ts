@@ -20,14 +20,15 @@ export class Obstacle extends Phaser.Physics.Matter.Sprite {
       {
         shape: {
           type: 'rectangle',
-          width,
-          height,
+          width: width * 0.75,
+          height: height * 0.8,
         },
       },
     );
     this.basicVector = new Phaser.Math.Vector2(x + width / 2, y + height / 2);
     this.moveSpeed = moveSpeed;
     this.setSensor(true).setDepth(8).setFrictionAir(0).setFriction(0);
+
     scene.add.existing(this);
   }
   preUpdate() {
