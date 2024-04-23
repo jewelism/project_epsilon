@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 /* eslint-disable no-underscore-dangle */
 import { type Player } from '@/objects/Player';
 
@@ -56,6 +57,7 @@ export const makeZone = (
       );
       graphics?.fillPoints(vertices, true);
     }
+    graphics?.destroy();
     zone.label = label;
     return zone;
   });

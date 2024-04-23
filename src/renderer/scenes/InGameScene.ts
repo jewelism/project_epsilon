@@ -432,12 +432,7 @@ export class InGameScene extends Phaser.Scene {
   ) {
     const obstacles = randomMovingObstacles.map(
       ({ x, y, width, height, properties }) => {
-        const {
-          _width,
-          _height,
-          moveSpeed = 1,
-          delay = 1000,
-        } = getValueByProperties(
+        const { _width, _height, moveSpeed, delay } = getValueByProperties(
           properties,
           '_width',
           '_height',
@@ -451,11 +446,11 @@ export class InGameScene extends Phaser.Scene {
           height: _height,
           spriteKey: 'pixel_animals',
           frameNo: 3,
-          moveSpeed,
+          moveSpeed: moveSpeed || Phaser.Math.RND.between(0.25, 1.25),
         });
         this.time.addEvent({
           loop: true,
-          delay,
+          delay: delay || Phaser.Math.RND.between(300, 1000),
           callback: () => {
             const newX = Phaser.Math.Between(x, x + width);
             const newY = Phaser.Math.Between(y, y + height);
