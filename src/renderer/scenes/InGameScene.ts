@@ -44,10 +44,6 @@ export class InGameScene extends Phaser.Scene {
   playerSpawnPoints: Phaser.Types.Tilemaps.TiledObject;
 
   obstacles: Obstacle[] = [];
-  nonstopZone: MatterJS.BodyType[];
-  straightZone: MatterJS.BodyType[];
-  invertZone: MatterJS.BodyType[];
-  speedZone: MatterJS.BodyType[];
   clearZone: MatterJS.BodyType[];
   collisions: MatterJS.BodyType[];
 
@@ -57,23 +53,6 @@ export class InGameScene extends Phaser.Scene {
     const { map, playerSpawnPoints, zonePoints } = this.createMap(this);
     this.map = map;
     this.playerSpawnPoints = playerSpawnPoints;
-
-    this.nonstopZone = makeZone(this, zonePoints.nonstop, {
-      color: 0x00ffff,
-      label: 'nonstop',
-    });
-    this.straightZone = makeZone(this, zonePoints.straight, {
-      color: 0x000fff,
-      label: 'straight',
-    });
-    this.invertZone = makeZone(this, zonePoints.invert, {
-      color: 0x0000ff,
-      label: 'invert',
-    });
-    this.speedZone = makeZone(this, zonePoints.speed, {
-      color: 0x00000f,
-      label: 'speed',
-    });
     this.clearZone = makeZone(this, zonePoints.clear, { label: 'clear' });
 
     await this.createSocketConnection();
@@ -92,7 +71,7 @@ export class InGameScene extends Phaser.Scene {
       loop: true,
     });
 
-    this.player.setOnCollideWith(this.collisions, () => {
+    const onCollides = () => {
       if (this.player.disabled) {
         return;
       }
@@ -102,7 +81,9 @@ export class InGameScene extends Phaser.Scene {
         x: this.player.x.toFixed(0),
         y: this.player.y.toFixed(0),
       });
-    });
+    };
+    this.player.setOnCollideWith(this.collisions, onCollides);
+    this.player.setOnCollideWith(this.obstacles, onCollides);
     this.player.setOnCollideWith(this.players, (player: Player) => {
       if (!player.disabled) {
         return;
@@ -345,14 +326,15 @@ export class InGameScene extends Phaser.Scene {
     const nonstopTiles = map.addTilesetImage('tiny_nonstop', 'tiny_nonstop');
     const straightTiles = map.addTilesetImage('tiny_straight', 'tiny_straight');
     const bgLayer = map.createLayer('bg', [bgTiles, kennyTiles]);
-    map.createLayer('bg_items', [
+    const bgItemsLayer = map.createLayer('bg_items', [
       bgTiles,
       kennyTiles,
       nonstopTiles,
       straightTiles,
     ]);
-
+    this.collisions = [];
     this.createCollisions(scene, bgLayer);
+    this.createCollisions(scene, bgItemsLayer);
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
     const zonePoints = Object.fromEntries(
       ZONE_KEYS.map((zone) => [
@@ -373,7 +355,6 @@ export class InGameScene extends Phaser.Scene {
     return { map, playerSpawnPoints, zonePoints };
   }
   createCollisions(scene, bgLayer) {
-    this.collisions = [];
     bgLayer.forEachTile((tile) => {
       const zone = makeZone(
         scene,

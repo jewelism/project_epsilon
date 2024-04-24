@@ -28,7 +28,7 @@ export const makeZone = (
     let zone: MatterJS.BodyType;
     const graphics: Phaser.GameObjects.Graphics = color
       ? scene.add.graphics({
-          fillStyle: { color, alpha: 0.1 },
+          fillStyle: { color, alpha: 1 },
         })
       : null;
     if (rectangle) {
@@ -57,7 +57,9 @@ export const makeZone = (
       );
       graphics?.fillPoints(vertices, true);
     }
-    graphics?.destroy();
+    if (!scene.game.config.physics.matter.debug) {
+      graphics?.destroy();
+    }
     zone.label = label;
     return zone;
   });
