@@ -111,7 +111,7 @@ export function createBreakInPlayers(dataPlayer: Player[]) {
 }
 
 export const getValueByProperties = (properties: any[], ...names) => {
-  const obj: any = {};
+  const obj: Record<(typeof names)[number], any> = {};
   names.forEach((n) => {
     obj[n] = properties?.find(({ name }) => name === n)?.value;
   });

@@ -162,17 +162,21 @@ export class Player extends Phaser.Physics.Matter.Sprite {
       }
     }
   }
-  isPlayerInZone(zone: Phaser.Types.Physics.Matter.MatterBody[]) {
-    return this.scene.matter.overlap(this, zone);
+  getTilesetName() {
+    const tile = (this.scene as InGameScene).map.getTileAtWorldXY(
+      this.x,
+      this.y,
+    );
+    return tile ? tile.tileset.name : '';
   }
   isPlayerInNonstopZone() {
-    return this.isPlayerInZone((this.scene as InGameScene).nonstopZone);
+    return this.getTilesetName().includes('nonstop');
   }
   isPlayerInStraightZone() {
-    return this.isPlayerInZone((this.scene as InGameScene).straightZone);
+    return this.getTilesetName().includes('straight');
   }
   isPlayerInInvertZone() {
-    return this.isPlayerInZone((this.scene as InGameScene).invertZone);
+    return this.getTilesetName().includes('invert');
   }
   destroy() {
     this.deadTweens?.stop();

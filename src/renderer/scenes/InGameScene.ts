@@ -16,6 +16,8 @@ import TinySki from '@/public/tiled/tiny_ski.png';
 import TinyKenny from '@/public/tiled/tiny_kenny.png';
 import map1 from '@/public/tiled/map_1.json';
 import map2 from '@/public/tiled/map_2.json';
+import TinyStraight from '@/public/tiled/tiny_straight.png';
+import TinyNonstop from '@/public/tiled/tiny_nonstop.png';
 
 const MAPS = [map1, map2] as const;
 
@@ -340,8 +342,15 @@ export class InGameScene extends Phaser.Scene {
     });
     const bgTiles = map.addTilesetImage('tiny_ski', 'tiny_ski');
     const kennyTiles = map.addTilesetImage('tiny_kenny', 'tiny_kenny');
+    const nonstopTiles = map.addTilesetImage('tiny_nonstop', 'tiny_nonstop');
+    const straightTiles = map.addTilesetImage('tiny_straight', 'tiny_straight');
     const bgLayer = map.createLayer('bg', [bgTiles, kennyTiles]);
-    map.createLayer('bg_items', [bgTiles, kennyTiles]);
+    map.createLayer('bg_items', [
+      bgTiles,
+      kennyTiles,
+      nonstopTiles,
+      straightTiles,
+    ]);
 
     this.createCollisions(scene, bgLayer);
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
@@ -544,6 +553,8 @@ export class InGameScene extends Phaser.Scene {
       this.load.tilemapTiledJSON(`map_${i + 1}`, map);
     });
     this.load.image('tiny_ski', TinySki);
+    this.load.image('tiny_nonstop', TinyNonstop);
+    this.load.image('tiny_straight', TinyStraight);
     this.load.spritesheet('tiny_kenny', TinyKenny, {
       frameWidth: 16,
       frameHeight: 16,
