@@ -14,6 +14,7 @@ export class InGameUIScene extends Phaser.Scene {
   toMainMenuText: Phaser.GameObjects.Text;
 
   create() {
+    this.sound.add('bgm', { loop: true, volume: 0.5 }).play();
     const { width } = this.scale;
     this.pingText = this.add
       .text(width - 10, 30, 'rtt', defaultTextStyle)
