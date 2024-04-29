@@ -4,7 +4,7 @@ import Phaser from 'phaser';
 import { KEYBOARD_KEYS, ZONE_KEYS } from '@/constants';
 import { Obstacle } from '@/objects/Obstacle';
 import { Player } from '@/objects/Player';
-import { type InGameUIScene } from '@/scenes/InGameUIScene';
+import { InGameUIScene } from '@/scenes/InGameUIScene';
 import { openMenuApp, removeGame, type CustomWebSocket } from '@/index';
 import {
   getValueByProperties,
@@ -16,10 +16,12 @@ import TinySki from '@/public/tiled/tiny_ski.png';
 import TinyKenny from '@/public/tiled/tiny_kenny.png';
 import map1 from '@/public/tiled/map_1.json';
 import map2 from '@/public/tiled/map_2.json';
+import map3 from '@/public/tiled/map_3.json';
 import TinyStraight from '@/public/tiled/tiny_straight.png';
 import TinyNonstop from '@/public/tiled/tiny_nonstop.png';
+import BGM from '@/public/bgm_pixabay.mp3';
 
-const MAPS = [map1, map2] as const;
+const MAPS = [map1, map2, map3] as const;
 
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
@@ -83,7 +85,20 @@ export class InGameScene extends Phaser.Scene {
       });
     };
     this.player.setOnCollideWith(this.collisions, onCollides);
-    this.player.setOnCollideWith(this.obstacles, onCollides);
+    this.matter.world.on('collisionstart', (_event, a, b) => {
+      const bodyA = a.gameObject;
+      const bodyB = b.gameObject;
+      const isPlayer = [bodyA, bodyB].includes(this.player);
+      if (!isPlayer) {
+        return;
+      }
+      if (
+        [a.label, b.label].includes('collision') ||
+        [bodyA, bodyB].some((body) => this.obstacles.includes(body))
+      ) {
+        onCollides();
+      }
+    });
     this.player.setOnCollideWith(this.players, (player: Player) => {
       if (!player.disabled) {
         return;
@@ -141,6 +156,11 @@ export class InGameScene extends Phaser.Scene {
           return;
         }
         player.playerDead(Number(data.x), Number(data.y));
+        const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
+        inGameUIScene.centerTextOn(`${player.nick} is dead!`);
+        this.time.delayedCall(500, () => {
+          inGameUIScene.centerTextOff();
+        });
         if (this.isAllPlayersDisabled()) {
           this.onGameOver();
         }
@@ -458,7 +478,18 @@ export class InGameScene extends Phaser.Scene {
         _width,
         _height,
         duration = 750,
-      } = getValueByProperties(properties, '_width', '_height', 'duration');
+        frameNo = 12,
+        stop,
+        startDelay = 0,
+      } = getValueByProperties(
+        properties,
+        '_width',
+        '_height',
+        'duration',
+        'frameNo',
+        'stop',
+        'startDelay',
+      );
       const createFire = () => {
         const obstacle = new Obstacle(this, {
           x,
@@ -466,22 +497,34 @@ export class InGameScene extends Phaser.Scene {
           width: _width,
           height: _height,
           spriteKey: 'tiny_kenny',
-          frameNo: 12,
+          frameNo,
         }).setAngle(180);
         this.obstacles = [...this.obstacles, obstacle];
-        const tween = this.tweens.add({
-          targets: obstacle,
-          duration,
-          repeat: -1,
-          y: y + height - 4,
-        });
-        tween.on('complete', () => {
-          obstacle.destroy();
-          this.obstacles = [...this.obstacles.filter((o) => o !== obstacle)];
-          createFire();
-        });
+        if (stop) {
+          this.time.delayedCall(250, () => {
+            this.obstacles = [...this.obstacles.filter((o) => o !== obstacle)];
+            obstacle.destroy();
+            this.time.delayedCall(duration, () => {
+              createFire();
+            });
+          });
+        } else {
+          const tween = this.tweens.add({
+            targets: obstacle,
+            duration,
+            repeat: -1,
+            y: y + height - 4,
+          });
+          tween.on('complete', () => {
+            this.obstacles = [...this.obstacles.filter((o) => o !== obstacle)];
+            obstacle.destroy();
+            createFire();
+          });
+        }
       };
-      createFire();
+      this.time.delayedCall(startDelay, () => {
+        createFire();
+      });
     });
   }
   prepareNextStage(afterShutdown) {
@@ -511,13 +554,17 @@ export class InGameScene extends Phaser.Scene {
     }
   }
   onGameOver() {
-    const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
-    inGameUIScene.centerTextOn('Game Over!');
-    this.prepareNextStage(() => {
-      this.scene.restart();
+    this.time.delayedCall(1500, () => {
+      const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
+      inGameUIScene.centerTextOn('Game Over!');
+      this.prepareNextStage(() => {
+        this.scene.restart();
+      });
     });
   }
   shutdown() {
+    const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
+    inGameUIScene.bgm.stop();
     this.player?.destroy();
     this.player = null;
     this.players.forEach((player) => player?.destroy());
@@ -544,6 +591,7 @@ export class InGameScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
+    this.load.audio('bgm', BGM);
   }
   init(data) {
     this.initialData = {

@@ -16,7 +16,7 @@ export function MainMenu({
 }: MainMenuProps) {
   return (
     <div>
-      <h1>Ice Escape</h1>
+      <h1>Pigscape</h1>
       <button type="button" onClick={() => onClickMultiplay(true)}>
         Create Multiplayer(Host)
       </button>

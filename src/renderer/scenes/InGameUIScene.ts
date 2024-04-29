@@ -6,15 +6,17 @@ import { type InGameScene } from '@/scenes/InGameScene';
 
 export class InGameUIScene extends Phaser.Scene {
   pingText: Phaser.GameObjects.Text;
-
   fpsText: Phaser.GameObjects.Text;
-
   centerText: Phaser.GameObjects.Text;
-
   toMainMenuText: Phaser.GameObjects.Text;
+  bgm:
+    | Phaser.Sound.NoAudioSound
+    | Phaser.Sound.HTML5AudioSound
+    | Phaser.Sound.WebAudioSound;
 
   create() {
-    this.sound.add('bgm', { loop: true, volume: 0.5 }).play();
+    this.bgm = this.sound.add('bgm', { loop: true, volume: 0.1 });
+    this.bgm.play();
     const { width } = this.scale;
     this.pingText = this.add
       .text(width - 10, 30, 'rtt', defaultTextStyle)
@@ -67,6 +69,7 @@ export class InGameUIScene extends Phaser.Scene {
   }
 
   onExit() {
+    this.bgm.stop();
     const inGameScene = this.scene.get('InGameScene') as InGameScene;
     inGameScene.removeListeners();
     inGameScene.initialData.ws.close();
