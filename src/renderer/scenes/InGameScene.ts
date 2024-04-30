@@ -47,7 +47,7 @@ export class InGameScene extends Phaser.Scene {
 
   obstacles: Obstacle[] = [];
   clearZone: MatterJS.BodyType[];
-  collisions: MatterJS.BodyType[];
+  collisions: MatterJS.BodyType[] = [];
 
   async create() {
     this.scene.launch('InGameUIScene');
@@ -84,7 +84,6 @@ export class InGameScene extends Phaser.Scene {
         y: this.player.y.toFixed(0),
       });
     };
-    this.player.setOnCollideWith(this.collisions, onCollides);
     this.matter.world.on('collisionstart', (_event, a, b) => {
       const bodyA = a.gameObject;
       const bodyB = b.gameObject;
@@ -93,7 +92,7 @@ export class InGameScene extends Phaser.Scene {
         return;
       }
       if (
-        [a.label, b.label].includes('collision') ||
+        [a.parent.label, b.parent.label].includes('collision') ||
         [bodyA, bodyB].some((body) => this.obstacles.includes(body))
       ) {
         onCollides();
@@ -158,7 +157,7 @@ export class InGameScene extends Phaser.Scene {
         player.playerDead(Number(data.x), Number(data.y));
         const inGameUIScene = this.scene.get('InGameUIScene') as InGameUIScene;
         inGameUIScene.centerTextOn(`${player.nick} is dead!`);
-        this.time.delayedCall(500, () => {
+        this.time.delayedCall(1000, () => {
           inGameUIScene.centerTextOff();
         });
         if (this.isAllPlayersDisabled()) {
@@ -352,7 +351,6 @@ export class InGameScene extends Phaser.Scene {
       nonstopTiles,
       straightTiles,
     ]);
-    this.collisions = [];
     this.createCollisions(scene, bgLayer);
     this.createCollisions(scene, bgItemsLayer);
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
@@ -481,6 +479,7 @@ export class InGameScene extends Phaser.Scene {
         frameNo = 12,
         stop,
         startDelay = 0,
+        spriteKey = 'tiny_kenny',
       } = getValueByProperties(
         properties,
         '_width',
@@ -489,6 +488,7 @@ export class InGameScene extends Phaser.Scene {
         'frameNo',
         'stop',
         'startDelay',
+        'spriteKey',
       );
       const createFire = () => {
         const obstacle = new Obstacle(this, {
@@ -496,9 +496,12 @@ export class InGameScene extends Phaser.Scene {
           y,
           width: _width,
           height: _height,
-          spriteKey: 'tiny_kenny',
+          spriteKey,
           frameNo,
-        }).setAngle(180);
+        });
+        if (!spriteKey) {
+          obstacle.setAngle(180);
+        }
         this.obstacles = [...this.obstacles, obstacle];
         if (stop) {
           this.time.delayedCall(250, () => {
@@ -570,6 +573,7 @@ export class InGameScene extends Phaser.Scene {
     this.players.forEach((player) => player?.destroy());
     this.players = [];
     this.obstacles = [];
+    this.collisions = [];
     this.scene.systems.shutdown();
   }
 
