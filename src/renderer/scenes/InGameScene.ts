@@ -7,6 +7,7 @@ import { Player } from '@/objects/Player';
 import { InGameUIScene } from '@/scenes/InGameUIScene';
 import { openMenuApp, removeGame, type CustomWebSocket } from '@/index';
 import {
+  createCollisions,
   getValueByProperties,
   makeZone,
   mouseClickEffect,
@@ -47,7 +48,6 @@ export class InGameScene extends Phaser.Scene {
 
   obstacles: Obstacle[] = [];
   clearZone: MatterJS.BodyType[];
-  collisions: MatterJS.BodyType[] = [];
 
   async create() {
     this.scene.launch('InGameUIScene');
@@ -122,8 +122,6 @@ export class InGameScene extends Phaser.Scene {
       });
     });
   }
-  getPlayerByUuid = (uuid: string) => this.players.find((p) => p.uuid === uuid);
-  isAllPlayersDisabled = () => this.players.every(({ disabled }) => disabled);
   wsResponse = (value) => {
     let data;
     try {
@@ -136,7 +134,7 @@ export class InGameScene extends Phaser.Scene {
       data = {};
       return;
     }
-    const player = this.getPlayerByUuid(data.uuid);
+    const player = this.players.find((p) => p.uuid === data.uuid);
     const dataManager = {
       move: () => {
         if (!player) {
@@ -160,7 +158,7 @@ export class InGameScene extends Phaser.Scene {
         this.time.delayedCall(1000, () => {
           inGameUIScene.centerTextOff();
         });
-        if (this.isAllPlayersDisabled()) {
+        if (this.players.every(({ disabled }) => disabled)) {
           this.onGameOver();
         }
       },
@@ -351,8 +349,8 @@ export class InGameScene extends Phaser.Scene {
       nonstopTiles,
       straightTiles,
     ]);
-    this.createCollisions(scene, bgLayer);
-    this.createCollisions(scene, bgItemsLayer);
+    createCollisions(scene, bgLayer);
+    createCollisions(scene, bgItemsLayer);
     const playerSpawnPoints = map.findObject('PlayerSpawn', () => true);
     const zonePoints = Object.fromEntries(
       ZONE_KEYS.map((zone) => [
@@ -371,20 +369,6 @@ export class InGameScene extends Phaser.Scene {
     scene.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
 
     return { map, playerSpawnPoints, zonePoints };
-  }
-  createCollisions(scene, bgLayer) {
-    bgLayer.forEachTile((tile) => {
-      const zone = makeZone(
-        scene,
-        (tile.getCollisionGroup() as any)?.objects.map(({ x, y, ...rest }) => ({
-          x: tile.pixelX + x,
-          y: tile.pixelY + y,
-          ...rest,
-        })) ?? [],
-        { color: 0x050505, label: 'collision' },
-      );
-      this.collisions = [...this.collisions, ...zone];
-    });
   }
   createMovingObstacles(movingObstacles: Phaser.Types.Tilemaps.TiledObject[]) {
     const obstacles = movingObstacles.map(
@@ -573,7 +557,6 @@ export class InGameScene extends Phaser.Scene {
     this.players.forEach((player) => player?.destroy());
     this.players = [];
     this.obstacles = [];
-    this.collisions = [];
     this.scene.systems.shutdown();
   }
 

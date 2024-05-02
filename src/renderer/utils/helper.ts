@@ -119,3 +119,20 @@ export const getValueByProperties = (properties: any[], ...names) => {
   });
   return obj;
 };
+
+export function createCollisions(
+  scene: Phaser.Scene,
+  bgLayer: Phaser.Tilemaps.TilemapLayer,
+) {
+  bgLayer.forEachTile((tile) => {
+    makeZone(
+      scene,
+      (tile.getCollisionGroup() as any)?.objects.map(({ x, y, ...rest }) => ({
+        x: tile.pixelX + x,
+        y: tile.pixelY + y,
+        ...rest,
+      })) ?? [],
+      { color: 0x050505, label: 'collision' },
+    );
+  });
+}
