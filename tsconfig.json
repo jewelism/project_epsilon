@@ -1,23 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "lib": ["ESNext", "DOM", "scripthost"],
-    "moduleResolution": "Node",
-    "strict": false,
+    "incremental": true,
+    "target": "es2022",
+    "module": "commonjs",
+    "lib": ["dom", "es2022"],
+    "jsx": "react-jsx",
     "sourceMap": true,
-    "resolveJsonModule": true,
+    "moduleResolution": "node",
     "esModuleInterop": true,
-    "types": ["vite/client"],
-    "noEmit": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "allowJs": true,
-    "noImplicitAny": false,
-    "baseUrl": ".",
+    "outDir": ".erb/dll",
+    "baseUrl": ".", // 이 경로를 기준으로 상대 경로를 설정합니다.
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/renderer/*"] // '@'는 'src/' 폴더를 가리킵니다.
     }
   },
-  "include": ["./src"]
+  "exclude": ["test", "release/build", "release/app/dist", ".erb/dll"]
 }
