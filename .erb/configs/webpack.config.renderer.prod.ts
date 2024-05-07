@@ -104,13 +104,6 @@ const configuration: webpack.Configuration = {
         test: /\.node$/,
         use: 'node-loader',
       },
-      {
-        test: /\.mp3$/,
-        loader: 'file-loader',
-        options: {
-          name: '[path][name].[ext]',
-        },
-      },
     ],
   },
 

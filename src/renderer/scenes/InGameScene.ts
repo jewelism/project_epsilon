@@ -20,7 +20,6 @@ import map2 from '@/public/tiled/map_2.json';
 import map3 from '@/public/tiled/map_3.json';
 import TinyStraight from '@/public/tiled/tiny_straight.png';
 import TinyNonstop from '@/public/tiled/tiny_nonstop.png';
-import BGM from '@/public/bgm_pixabay.mp3';
 
 const MAPS = [map1, map2, map3] as const;
 
@@ -578,7 +577,7 @@ export class InGameScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16,
     });
-    this.load.audio('bgm', BGM);
+    this.load.audio('bgm', 'audio/bgm_pixabay.mp3');
   }
   init(data) {
     this.initialData = {
