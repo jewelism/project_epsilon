@@ -207,10 +207,6 @@
       {
         "from": "public",
         "to": "app/dist/renderer"
-      },
-      {
-        "from": "public",
-        "to": "dist/renderer"
       }
     ]
   },
