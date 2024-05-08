@@ -15,13 +15,9 @@ import {
 import PixelAnimals from '@/public/pixel_animals.png';
 import TinySki from '@/public/tiled/tiny_ski.png';
 import TinyKenny from '@/public/tiled/tiny_kenny.png';
-import map1 from '@/public/tiled/map_1.json';
-import map2 from '@/public/tiled/map_2.json';
-import map3 from '@/public/tiled/map_3.json';
 import TinyStraight from '@/public/tiled/tiny_straight.png';
 import TinyNonstop from '@/public/tiled/tiny_nonstop.png';
-
-const MAPS = [map1, map2, map3] as const;
+import { MAPS } from '@/constants/maps';
 
 type ZonePointsType = Record<
   (typeof ZONE_KEYS)[number],
@@ -482,7 +478,7 @@ export class InGameScene extends Phaser.Scene {
           spriteKey,
           frameNo,
         });
-        if (!spriteKey) {
+        if (spriteKey === 'tiny_kenny') {
           obstacle.setAngle(180);
         }
         this.obstacles = [...this.obstacles, obstacle];
