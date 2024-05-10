@@ -3,7 +3,7 @@ import { type InGameScene } from '@/scenes/InGameScene';
 import { defaultTextStyle } from '@/constants';
 
 export class Player extends Phaser.Physics.Matter.Sprite {
-  moveSpeed = 0.75;
+  moveSpeed = 0.5;
   frameNo: number;
   spriteKey: string;
 
