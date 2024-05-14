@@ -18,6 +18,12 @@ module.exports = {
     'jsx-props-no-spreading': 'off',
     'no-console': 'off',
     'no-undef': 'off',
+    'prettier/prettier': [
+      'error',
+      {
+        endOfLine: 'auto',
+      },
+    ],
   },
   parserOptions: {
     ecmaVersion: 2022,
