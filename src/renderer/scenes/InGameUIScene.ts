@@ -13,10 +13,16 @@ export class InGameUIScene extends Phaser.Scene {
     | Phaser.Sound.NoAudioSound
     | Phaser.Sound.HTML5AudioSound
     | Phaser.Sound.WebAudioSound;
+  menuBackground: Phaser.GameObjects.Rectangle;
 
   create() {
     this.bgm = this.sound.add('bgm', { loop: true, volume: 0.1 });
-    this.bgm.play();
+    if (window.electron.store.get('muteBGM')) {
+      this.bgm.setMute(true);
+    } else {
+      this.bgm.play();
+    }
+
     const { width } = this.scale;
     this.pingText = this.add
       .text(width - 10, 30, 'rtt', defaultTextStyle)
@@ -41,18 +47,35 @@ export class InGameUIScene extends Phaser.Scene {
   toggleMenu() {
     if (this.toMainMenuText) {
       this.toMainMenuText.destroy();
+      this.toMainMenuText = null;
+      this.menuBackground.destroy();
+      this.menuBackground = null;
       return;
     }
     this.toMainMenuText = this.add
-      .text(this.scale.width / 2, this.scale.height / 2, 'Go to main', {
+      .text(this.scale.width / 2, this.scale.height / 2, 'Leave the game', {
         ...defaultTextStyle,
         fontSize: '30px',
       })
+      .setOrigin(0.5);
+
+    const textWidth = this.toMainMenuText.width;
+    const textHeight = this.toMainMenuText.height;
+    this.menuBackground = this.add
+      .rectangle(
+        this.scale.width / 2,
+        this.scale.height / 2,
+        textWidth + 20,
+        textHeight + 10,
+        0x000000,
+      )
       .setOrigin(0.5)
       .setInteractive()
       .on('pointerdown', () => {
         this.onExit();
       });
+
+    this.menuBackground.setDepth(this.toMainMenuText.depth - 1);
   }
 
   centerTextOn(text: string) {

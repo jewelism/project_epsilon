@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { MainMenu } from '@/views/MainMenu';
 import { EditProfile } from '@/views/EditProfile';
 import { MultiplayLobby } from '@/views/MultiplayLobby';
+import { Option } from '@/views/Option';
 import './index.css';
 
 export function Main() {
@@ -53,6 +54,9 @@ export function Main() {
           onClickEditProfile={() => {
             setCurrentView('EditProfile');
           }}
+          onClickOption={() => {
+            setCurrentView('Option');
+          }}
         />
       )}
       {currentView === 'EditProfile' && (
@@ -71,6 +75,13 @@ export function Main() {
           frameNo={frameNo}
           ipAddrInput={ipAddrInput}
           setCurrentView={setCurrentView}
+        />
+      )}
+      {currentView === 'Option' && (
+        <Option
+          onClickExit={() => {
+            setCurrentView('MainMenu');
+          }}
         />
       )}
     </div>

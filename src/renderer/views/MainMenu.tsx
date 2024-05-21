@@ -5,6 +5,7 @@ type MainMenuProps = {
   setServingPortInput: (value: string) => void;
   onClickMultiplay: (isHost: boolean) => void;
   onClickEditProfile: () => void;
+  onClickOption: () => void;
 };
 export function MainMenu({
   ipAddrInput,
@@ -13,6 +14,7 @@ export function MainMenu({
   setServingPortInput,
   onClickMultiplay,
   onClickEditProfile,
+  onClickOption,
 }: MainMenuProps) {
   return (
     <div>
@@ -64,6 +66,9 @@ export function MainMenu({
       <br />
       <button type="button" onClick={onClickEditProfile}>
         Edit profile
+      </button>
+      <button type="button" onClick={onClickOption}>
+        Option
       </button>
     </div>
   );

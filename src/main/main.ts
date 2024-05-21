@@ -14,7 +14,6 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import Store from 'electron-store';
 import steamworks from 'steamworks.js';
-import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { closeServer, openServer } from './server';
 
@@ -49,7 +48,6 @@ const mainWindowOptions = {
 };
 
 let mainWindow: BrowserWindow | null = null;
-let window2: BrowserWindow | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 ipcMain.on('openServer', async (_event, arg) => {
@@ -95,12 +93,13 @@ const installExtensions = async () => {
 const createWindow = async () => {
   if (isDebug) {
     await installExtensions();
+    // mainWindow.webContents.openDevTools();
   }
 
   mainWindow = new BrowserWindow(mainWindowOptions);
-
+  mainWindow.setMenu(null);
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-  mainWindow.webContents.openDevTools();
+  //
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
@@ -116,8 +115,8 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
+  // const menuBuilder = new MenuBuilder(mainWindow);
+  // menuBuilder.buildMenu();
 
   // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
@@ -156,22 +155,6 @@ app
     });
   })
   .catch(console.log);
-
-app
-  .whenReady()
-  .then(() => {
-    window2 = new BrowserWindow(mainWindowOptions);
-    window2.loadURL(resolveHtmlPath('index.html'));
-    app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (window2 === null) {
-        window2 = new BrowserWindow(mainWindowOptions);
-        window2.loadURL(resolveHtmlPath('index.html'));
-      }
-    });
-  })
-  .catch(console.warn);
 
 try {
   const steamClient = steamworks.init(2930990);
