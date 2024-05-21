@@ -584,7 +584,15 @@ export class InGameScene extends Phaser.Scene {
       }[],
       ws: window.ws,
       uuid: window.electron.store.get('uuid') || '',
-      stage: data.stage || Number(window.electron.store.get('stage')) || 1,
+      stage: 3,
+      // stage: data.stage || Number(window.electron.store.get('stage')) || 1,
     };
   }
 }
+// TODO: 중간중간 쉼터 필요.
+// 다양한 무빙패턴.은 만들기 귀찮.
+// - 문여는 버튼?
+// 스1 유즈맵 프리즌브레이크 스테이지 참고하기 - 버로우로 벽넘기는 어떻게 카피하면 좋지?
+// - 플레이어 한명 죽으면 웃긴 텍스트 띄우기. ???는 이제 세상에 없습니다. 터져버렸습니다. 등등
+
+// 아이템을 먹어야한다던지, 퍼즐요소를 무조건 넣자.
