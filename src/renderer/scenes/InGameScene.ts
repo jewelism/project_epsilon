@@ -93,12 +93,18 @@ export class InGameScene extends Phaser.Scene {
         onCollides();
       }
     });
-    this.player.setOnCollideWith(this.players, (player: Player) => {
-      if (!player.disabled) {
+    this.matter.world.on('collisionstart', (_event, a, b) => {
+      const bodyA = a.gameObject;
+      const bodyB = b.gameObject;
+      if (!(bodyA?.spriteKey && bodyB?.spriteKey)) {
+        return;
+      }
+      const deadPlayer = [bodyA, bodyB].find(({ disabled }) => disabled);
+      if (!deadPlayer) {
         return;
       }
       this.initialData.ws.sendJson({
-        uuid: player.uuid,
+        uuid: deadPlayer.uuid,
         type: 'resurrection',
         x: this.playerSpawnPoints.x,
         y: this.playerSpawnPoints.y,
